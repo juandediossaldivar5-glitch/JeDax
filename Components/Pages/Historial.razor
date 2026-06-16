@@ -1,0 +1,110 @@
+@page "/historial"
+@inject InventarioService Inventario
+@inject ExportService Export
+@inject UserSession Session
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+@rendermode RenderMode.InteractiveServer
+
+<h1>Historial de Movimientos</h1>
+
+@if (!_cargado)
+{
+    <p>Cargando…</p>
+}
+else
+{
+    <div class="toolbar" style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap;margin-bottom:1rem">
+        <input value="@_filtro" @oninput="Filtrar" placeholder="Buscar CASE / Item / Referencia…" class="input" />
+        <select value="@_filtroTipo" @oninput="FiltrarTipo" class="input" style="max-width:160px">
+            <option value="">Todos</option>
+            <option value="Entrada">Entrada</option>
+            <option value="Salida">Salida</option>
+            <option value="Ubicacion">Ubicación</option>
+        </select>
+        <button @onclick="ExportarHistorial" class="btn-outline" style="margin-left:auto">↓ Exportar</button>
+    </div>
+
+    @if (_movimientos is null)
+    {
+        <p>Cargando…</p>
+    }
+    else if (!_filtrados.Any())
+    {
+
+        <p>Sin resultados.</p>
+    }
+    else
+    {
+        <p style="color:var(--text-muted);font-size:.8rem;margin-bottom:.5rem">@_filtrados.Count registros</p>
+        <table class="tabla">
+            <thead>
+                <tr><th>Fecha</th><th>Tipo</th><th>CASE</th><th>Item</th><th>Descripción</th><th>Qty</th><th>Referencia</th><th>Ubicación</th><th>Usuario</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var m in _filtrados.Take(500))
+                {
+                    <tr>
+                        <td>@m.Fecha.ToLocalTime().ToString("dd/MM/yy HH:mm")</td>
+                        <td><span class="badge badge-mov-@m.Tipo.ToString().ToLower()">@m.Tipo</span></td>
+                        <td>@m.CaseCode</td>
+                        <td>@m.Item</td>
+                        <td>@m.Descripcion</td>
+                        <td>@m.Qty</td>
+                        <td>@(m.Tipo == TipoMovimiento.Ubicacion ? UbicacionFormatter.Display(m.Referencia) : m.Referencia)</td>
+                        <td>@UbicacionFormatter.Display(m.Ubicacion)</td>
+                        <td>@m.Usuario</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+}
+
+@code {
+    List<MovimientoHistorico>? _movimientos;
+    List<MovimientoHistorico> _filtrados = [];
+    string _filtro = "", _filtroTipo = "";
+    bool _cargado;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        await Session.LoadAsync();
+        if (!Session.IsAuthenticated)
+        {
+            Nav.NavigateTo("/login", forceLoad: false);
+            return;
+        }
+
+        _movimientos = await Inventario.ObtenerMovimientosAsync();
+        _filtrados = _movimientos;
+        _cargado = true;
+        StateHasChanged();
+    }
+
+    void Filtrar(ChangeEventArgs e) { _filtro = e.Value?.ToString() ?? ""; AplicarFiltros(); }
+    void FiltrarTipo(ChangeEventArgs e) { _filtroTipo = e.Value?.ToString() ?? ""; AplicarFiltros(); }
+
+    void AplicarFiltros()
+    {
+        var q = _movimientos ?? [];
+        if (!string.IsNullOrWhiteSpace(_filtroTipo) && Enum.TryParse<TipoMovimiento>(_filtroTipo, out var tipo))
+            q = q.Where(m => m.Tipo == tipo).ToList();
+        if (!string.IsNullOrWhiteSpace(_filtro))
+        {
+            string f = _filtro.ToUpperInvariant();
+            q = q.Where(m => m.CaseCode.Contains(f) || m.Item.Contains(f) ||
+                              m.Referencia.Contains(f) || m.Usuario.ToUpperInvariant().Contains(f)).ToList();
+        }
+        _filtrados = q;
+    }
+
+    async Task ExportarHistorial()
+    {
+        var bytes = await Export.ExportarHistorialAsync();
+        await JS.InvokeVoidAsync("downloadFile", Convert.ToBase64String(bytes), "jedax_historial.xlsx",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    }
+}   2

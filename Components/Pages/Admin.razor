@@ -1,0 +1,118 @@
+@page "/admin"
+@inject UsuarioService UsuarioSvc
+@inject UserSession Session
+@inject NavigationManager Nav
+@rendermode RenderMode.InteractiveServer
+
+<h1>Administración de Usuarios</h1>
+
+@if (!string.IsNullOrEmpty(_msg)) { <div class="@_msgCss">@_msg</div> }
+
+<div class="form-section" style="max-width:560px">
+    <label>Nuevo usuario</label>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+        <input value="@_nuevoUser" @oninput="e => _nuevoUser = e.Value?.ToString() ?? string.Empty"
+               placeholder="USERNAME" class="input" style="max-width:200px" />
+        <input type="password" value="@_nuevoPass" @oninput="e => _nuevoPass = e.Value?.ToString() ?? string.Empty"
+               placeholder="Contraseña" class="input" style="max-width:180px" />
+        <select value="@_nuevoRol" @onchange="e => _nuevoRol = Enum.Parse<RolUsuario>(e.Value!.ToString()!)"
+                class="input" style="max-width:140px">
+            @foreach (var rol in Enum.GetValues<RolUsuario>())
+            {
+                <option value="@rol">@rol</option>
+            }
+        </select>
+        <button @onclick="CrearUsuario" class="btn-primary">Crear</button>
+    </div>
+</div>
+
+@if (_usuarios is null) { <p>Cargando…</p> }
+else
+{
+    <table class="tabla">
+        <thead><tr><th>Usuario</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr></thead>
+        <tbody>
+            @foreach (var u in _usuarios)
+            {
+                <tr>
+                    <td>@u.Username</td>
+                    <td>
+                        <select value="@u.Rol" @onchange="e => CambiarRol(u.Id, e)" class="input" style="max-width:130px;padding:.25rem">
+                            @foreach (var rol in Enum.GetValues<RolUsuario>())
+                            {
+                                <option value="@rol" selected="@(u.Rol == rol)">@rol</option>
+                            }
+                        </select>
+                    </td>
+                    <td><span class="badge @(u.Activo ? "badge-ubicado" : "badge-salida")">@(u.Activo ? "Activo" : "Inactivo")</span></td>
+                    <td style="display:flex;gap:.4rem;flex-wrap:wrap">
+                        <button @onclick="() => ToggleActivo(u.Id)" class="btn-sm">@(u.Activo ? "Desactivar" : "Activar")</button>
+                        @if (_cambiarPassId == u.Id)
+                        {
+                            <input type="password" value="@_newPass"
+                                   @oninput="e => _newPass = e.Value?.ToString() ?? string.Empty"
+                                   placeholder="Nueva contraseña" class="input" style="max-width:160px;padding:.25rem" />
+                            <button @onclick="() => GuardarPassword(u.Id)" class="btn-sm">Guardar</button>
+                            <button @onclick="() => _cambiarPassId = -1" class="btn-sm">X</button>
+                        }
+                        else
+                        {
+                            <button @onclick="() => IniciarCambioPass(u.Id)" class="btn-sm">Cambiar pass</button>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    List<Usuario>? _usuarios;
+    string _nuevoUser = "", _nuevoPass = "", _msg = "", _msgCss = "", _newPass = "";
+    RolUsuario _nuevoRol = RolUsuario.Operador;
+    int _cambiarPassId = -1;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Session.LoadAsync();
+        if (!Session.IsAuthenticated) { Nav.NavigateTo("/login"); return; }
+        if (!Permisos.PuedeAdministrarUsuarios(Session.User!.Rol)) { Nav.NavigateTo("/stock"); return; }
+        await Cargar();
+    }
+
+    async Task Cargar() => _usuarios = await UsuarioSvc.ListarAsync();
+
+    async Task CrearUsuario()
+    {
+        if (string.IsNullOrWhiteSpace(_nuevoUser) || string.IsNullOrWhiteSpace(_nuevoPass))
+        { Mostrar("Usuario y contraseña son requeridos.", "alert-error"); return; }
+        try
+        {
+            await UsuarioSvc.CrearAsync(_nuevoUser, _nuevoPass, _nuevoRol);
+            Mostrar($"Usuario {_nuevoUser.ToUpperInvariant()} creado.", "alert-ok");
+            _nuevoUser = ""; _nuevoPass = "";
+            await Cargar();
+        }
+        catch (Exception ex) { Mostrar(ex.Message, "alert-error"); }
+    }
+
+    async Task ToggleActivo(int id) { await UsuarioSvc.ToggleActivoAsync(id); await Cargar(); }
+
+    async Task CambiarRol(int id, ChangeEventArgs e)
+    {
+        if (Enum.TryParse<RolUsuario>(e.Value?.ToString(), out var rol))
+        { await UsuarioSvc.CambiarRolAsync(id, rol); Mostrar("Rol actualizado.", "alert-ok"); }
+    }
+
+    void IniciarCambioPass(int id) { _cambiarPassId = id; _newPass = ""; }
+
+    async Task GuardarPassword(int id)
+    {
+        if (string.IsNullOrWhiteSpace(_newPass)) { Mostrar("La contraseña no puede estar vacía.", "alert-error"); return; }
+        await UsuarioSvc.CambiarPasswordAsync(id, _newPass);
+        _cambiarPassId = -1; _newPass = "";
+        Mostrar("Contraseña actualizada.", "alert-ok");
+    }
+
+    void Mostrar(string msg, string css) { _msg = msg; _msgCss = css; }
+}

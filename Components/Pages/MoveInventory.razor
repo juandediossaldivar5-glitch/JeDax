@@ -1,0 +1,259 @@
+﻿@page "/move-inventory"
+@inject InventarioService Inventario
+@inject UserSession Session
+@inject NavigationManager Nav
+@rendermode RenderMode.InteractiveServer
+
+<h1>MoveInventory</h1>
+
+@if (!string.IsNullOrEmpty(_msg))
+{
+    <div class="@_msgCss">@_msg</div>
+}
+
+@if (!_cargado)
+{
+    <p>Cargando…</p>
+}
+else
+{
+    @* ─── Selector de CASE ─── *@
+    <div class="form-section">
+        <label>Escanear CASE</label>
+        <input value="@_caseInput"
+               @oninput="e => _caseInput = (e.Value?.ToString() ?? string.Empty).Trim().ToUpperInvariant()"
+               @onkeydown="OnCaseKeyDown"
+               placeholder="Escanea el código de CASE"
+               class="input input-scan" @ref="_inputCase" />
+        <button @onclick="BuscarCase" class="btn-primary" disabled="@_buscando">Buscar</button>
+
+        @if (_esAdmin)
+        {
+            <details style="margin-top:.5rem">
+                <summary style="cursor:pointer;color:var(--text-muted)">Seleccionar de lista</summary>
+                <select @onchange="OnCaseSeleccionado" class="input" style="margin-top:.5rem">
+                    <option value="">— Selecciona un CASE —</option>
+                    @foreach (var c in _casesDisponibles)
+                    {
+                        <option value="@c.CaseCode">
+                            @c.CaseCode — @c.Producto.Item — @UbicacionFormatter.Display(c.Ubicacion)
+                        </option>
+                    }
+                </select>
+            </details>
+        }
+    </div>
+
+    @* ─── Info del CASE ─── *@
+    @if (_caseActual is not null)
+    {
+        <div class="case-found" style="margin-top:1rem">
+            <strong>@_caseActual.CaseCode</strong><br />
+            Descripción: @_caseActual.Producto.Descripcion<br />
+            Cantidad: <strong>@_caseActual.QtyActual</strong><br />
+            Ubicación actual: <strong>@UbicacionFormatter.Display(_caseActual.Ubicacion)</strong>
+        </div>
+
+        @* ─── Selector de ubicación destino ─── *@
+        <div class="form-section" style="margin-top:1rem">
+            <label>Nueva ubicación</label>
+            <input value="@_ubicacionInput"
+                   @oninput="e => _ubicacionInput = (e.Value?.ToString() ?? string.Empty).Trim().ToUpperInvariant()"
+                   @onkeydown="OnUbicacionKeyDown"
+                   placeholder="Ej: JEDX/ALT/010101"
+                   class="input input-scan" @ref="_inputUbicacion" />
+            <button @onclick="PrepararMovimiento" class="btn-primary">Mover</button>
+
+            @if (_esAdmin && _ubicacionesExistentes.Any())
+            {
+                <details style="margin-top:.5rem">
+                    <summary style="cursor:pointer;color:var(--text-muted)">Seleccionar de ubicaciones existentes</summary>
+                    <select @onchange="OnUbicacionSeleccionada" class="input" style="margin-top:.5rem">
+                        <option value="">— Selecciona ubicación —</option>
+                        @foreach (var u in _ubicacionesExistentes)
+                        {
+                            <option value="@u">@UbicacionFormatter.Display(u)</option>
+                        }
+                    </select>
+                </details>
+            }
+        </div>
+    }
+
+    @* ─── Modal de confirmación ─── *@
+    @if (_confirmacion is not null)
+    {
+        <div class="modal-overlay" @onclick="CancelarMovimiento">
+            <div class="modal" @onclick:stopPropagation>
+                <h3>Confirmar movimiento</h3>
+                <p>
+                    <strong>CASE:</strong> @_confirmacion.CaseCode<br />
+                    <strong>De:</strong> @UbicacionFormatter.Display(_confirmacion.UbicacionAnterior)<br />
+                    <strong>A:</strong> @UbicacionFormatter.Display(_confirmacion.UbicacionNueva)
+                </p>
+                <div style="display:flex;gap:.5rem;margin-top:1rem">
+                    <button @onclick="ConfirmarMovimiento" class="btn-primary" disabled="@_moviendo">Confirmar</button>
+                    <button @onclick="CancelarMovimiento" class="btn-outline">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    }
+
+    @* ─── Historial de movimientos en esta sesión ─── *@
+    @if (_movidos.Any())
+    {
+        <h3 style="margin-top:1.5rem">Movidos en esta sesión (@_movidos.Count)</h3>
+        <table class="tabla">
+            <thead><tr><th>CASE</th><th>De</th><th>A</th></tr></thead>
+            <tbody>
+                @foreach (var m in _movidos)
+                {
+                    <tr>
+                        <td>@m.CaseCode</td>
+                        <td>@UbicacionFormatter.Display(m.UbicacionAnterior)</td>
+                        <td>@UbicacionFormatter.Display(m.UbicacionNueva)</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+}
+
+@code {
+    record MovimientoPendiente(string CaseCode, string? UbicacionAnterior, string UbicacionNueva);
+
+    ElementReference _inputCase;
+    ElementReference _inputUbicacion;
+    string _caseInput = "", _ubicacionInput = "", _msg = "", _msgCss = "";
+    bool _cargado, _buscando, _moviendo, _esAdmin;
+    Case? _caseActual;
+    MovimientoPendiente? _confirmacion;
+    List<MovimientoPendiente> _movidos = [];
+    List<Case> _casesDisponibles = [];
+    List<string> _ubicacionesExistentes = [];
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        await Session.LoadAsync();
+        if (!Session.IsAuthenticated)
+        {
+            Nav.NavigateTo("/login", forceLoad: false);
+            return;
+        }
+
+        if (!Permisos.PuedeMoverInventario(Session.User!.Rol))
+        {
+            Mostrar("No tienes permiso para mover inventario.", "alert-error");
+            Nav.NavigateTo("/stock", forceLoad: false);
+            return;
+        }
+
+        _esAdmin = Session.User.Rol == RolUsuario.Admin;
+        if (_esAdmin)
+        {
+            _casesDisponibles = await Inventario.ObtenerCasesParaSeleccionAsync();
+            _ubicacionesExistentes = await Inventario.ObtenerUbicacionesExistentesAsync();
+        }
+
+        _cargado = true;
+        StateHasChanged();
+    }
+
+    async Task OnCaseKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") await BuscarCase();
+    }
+
+    async Task OnUbicacionKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") PrepararMovimiento();
+    }
+
+    async Task BuscarCase()
+    {
+        if (string.IsNullOrWhiteSpace(_caseInput)) return;
+        _buscando = true; _msg = ""; _caseActual = null;
+        try
+        {
+            var c = await Inventario.BuscarCasePorCodigoAsync(_caseInput);
+            if (c is null) { Mostrar($"CASE {_caseInput} no encontrado.", "alert-error"); return; }
+            if (c.Estado == EstadoCase.Salida) { Mostrar($"CASE {_caseInput} ya fue dado de baja.", "alert-error"); return; }
+
+            _caseActual = c;
+            StateHasChanged();
+            await Task.Delay(50);
+            await _inputUbicacion.FocusAsync();
+        }
+        finally { _buscando = false; }
+    }
+
+    async Task OnCaseSeleccionado(ChangeEventArgs e)
+    {
+        var code = e.Value?.ToString();
+        if (string.IsNullOrEmpty(code)) return;
+        _caseInput = code;
+        await BuscarCase();
+    }
+
+    void OnUbicacionSeleccionada(ChangeEventArgs e)
+    {
+        var u = e.Value?.ToString();
+        if (!string.IsNullOrEmpty(u)) _ubicacionInput = u;
+    }
+
+    void PrepararMovimiento()
+    {
+        if (_caseActual is null) { Mostrar("Primero busca un CASE.", "alert-error"); return; }
+        if (string.IsNullOrWhiteSpace(_ubicacionInput)) { Mostrar("Ingresa la nueva ubicación.", "alert-error"); return; }
+        if (!InventarioService.EsUbicacionValida(_ubicacionInput))
+        {
+            Mostrar($"Formato de ubicación inválido: {_ubicacionInput}. Esperado: XXXX/XXX/NNNNNN", "alert-error");
+            return;
+        }
+        if (_caseActual.Ubicacion == _ubicacionInput)
+        {
+            Mostrar($"El CASE ya está en {_ubicacionInput}.", "alert-warn");
+            return;
+        }
+
+        _confirmacion = new MovimientoPendiente(_caseActual.CaseCode, _caseActual.Ubicacion, _ubicacionInput);
+        _msg = "";
+    }
+
+    async Task ConfirmarMovimiento()
+    {
+        if (_confirmacion is null) return;
+        _moviendo = true;
+        try
+        {
+            await Inventario.MoverCaseAsync(_confirmacion.CaseCode, _confirmacion.UbicacionNueva, Session.User!.Username);
+            _movidos.Insert(0, _confirmacion);
+            Mostrar($"✓ {_confirmacion.CaseCode} movido a {_confirmacion.UbicacionNueva}.", "alert-ok");
+
+            // Reset
+            _confirmacion = null;
+            _caseActual = null;
+            _caseInput = "";
+            _ubicacionInput = "";
+
+            // Refrescar listas para Admin
+            if (_esAdmin)
+            {
+                _casesDisponibles = await Inventario.ObtenerCasesParaSeleccionAsync();
+                _ubicacionesExistentes = await Inventario.ObtenerUbicacionesExistentesAsync();
+            }
+
+            StateHasChanged();
+            await Task.Delay(50);
+            await _inputCase.FocusAsync();
+        }
+        catch (Exception ex) { Mostrar(ex.Message, "alert-error"); _confirmacion = null; }
+        finally { _moviendo = false; }
+    }
+
+    void CancelarMovimiento() => _confirmacion = null;
+
+    void Mostrar(string msg, string css) { _msg = msg; _msgCss = css; }
+}

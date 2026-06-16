@@ -1,0 +1,12 @@
+@page "/logout"
+@inject UserSession Session
+@inject NavigationManager Nav
+@rendermode RenderMode.InteractiveServer
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        await Session.ClearAsync();
+        Nav.NavigateTo("/login");
+    }
+}

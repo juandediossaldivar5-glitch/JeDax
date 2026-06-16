@@ -1,0 +1,232 @@
+@page "/ingreso"
+@inject InventarioService Inventario
+@inject ValeService ValesSvc
+@inject UserSession Session
+@inject NavigationManager Nav
+@rendermode RenderMode.InteractiveServer
+
+<h1>Ingreso de Cases</h1>
+
+@if (!string.IsNullOrEmpty(_msg))
+{
+    <div class="@_msgCss">@_msg</div>
+}
+
+@if (!_cargado)
+{
+    <p>Cargando…</p>
+}
+else if (_vale is null)
+{
+    <div class="form-section">
+        <label>Referencia del Vale de Entrada</label>
+        <input value="@_refInput"
+               @oninput="e => _refInput = e.Value?.ToString() ?? string.Empty"
+               @onkeydown="OnRefKeyDown"
+               placeholder="Ej: MELXET26-0134"
+               class="input" @ref="_inputRef" />
+        <button @onclick="CargarVale" class="btn-primary" disabled="@_buscando">Cargar Vale</button>
+    </div>
+}
+else
+{
+    <div class="vale-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem">
+        <div>
+            <strong>Vale:</strong> @_vale.Referencia |
+            <strong>Tipo:</strong> @_vale.Tipo |
+            <strong>Estado:</strong> @_vale.Estado
+        </div>
+        <div>
+            <strong>Progreso:</strong> @_procesados / @_total
+            (@_pendientes pendientes)
+        </div>
+        <button @onclick="CerrarPantalla" class="btn-outline">Cambiar vale</button>
+    </div>
+
+    @if (_vale.Estado == EstadoVale.Cerrado)
+    {
+        <div class="alert-ok" style="margin-top:1rem;text-align:center;padding:1.5rem;font-size:1.2rem">
+            ✓ Vale completado — @_total CASEs procesados.
+        </div>
+    }
+    else if (_vale.Estado == EstadoVale.Open)
+    {
+        <div class="form-section" style="margin-top:1rem">
+            <label>Escanear CASE</label>
+            <input value="@_caseInput"
+                   @oninput="e => _caseInput = (e.Value?.ToString() ?? string.Empty).Trim().ToUpperInvariant()"
+                   @onkeydown="OnCaseKeyDown"
+                   placeholder="Escanea el código de CASE"
+                   class="input input-scan" @ref="_inputScan" />
+            <button @onclick="ProcesarCase" class="btn-primary" disabled="@_procesando">Registrar</button>
+        </div>
+    }
+
+    <table class="tabla" style="margin-top:1rem">
+        <thead>
+            <tr>
+                <th>CASE</th>
+                <th>Item</th>
+                <th>Descripción</th>
+                <th>Qty</th>
+                <th>Estado</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var d in _vale.Detalles.OrderBy(x => x.Procesado).ThenBy(x => x.CaseCode))
+            {
+                <tr class="@(d.Procesado ? "row-ok" : "")">
+                    <td>@d.CaseCode</td>
+                    <td>@d.Item</td>
+                    <td>@d.Descripcion</td>
+                    <td>@d.Qty</td>
+                    <td>
+                        @if (d.Procesado)
+                        {
+                            <span class="badge badge-ok">✓ @d.UsuarioProcesado</span>
+                        }
+                        else
+                        {
+                            <span class="badge badge-warn">Pendiente</span>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    ElementReference _inputRef;
+    ElementReference _inputScan;
+    string _refInput = "", _caseInput = "", _msg = "", _msgCss = "";
+    bool _buscando, _procesando, _cargado;
+    Vale? _vale;
+    int _procesados, _pendientes, _total;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        await Session.LoadAsync();
+        if (!Session.IsAuthenticated)
+        {
+            Nav.NavigateTo("/login", forceLoad: false);
+            return;
+        }
+
+        if (!Permisos.PuedeUsarIngreso(Session.User!.Rol))
+        {
+            Mostrar("No tienes permiso para ingresar cases.", "alert-error");
+            Nav.NavigateTo("/stock", forceLoad: false);
+            return;
+        }
+
+        _cargado = true;
+        StateHasChanged();
+    }
+
+    async Task OnRefKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") await CargarVale();
+    }
+
+    async Task OnCaseKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") await ProcesarCase();
+    }
+
+    async Task CargarVale()
+    {
+        if (string.IsNullOrWhiteSpace(_refInput)) { Mostrar("Ingresa la referencia del vale.", "alert-error"); return; }
+        _buscando = true; _msg = "";
+        try
+        {
+            var v = await ValesSvc.ObtenerPorReferenciaAsync(_refInput);
+            if (v is null) { Mostrar($"Vale {_refInput} no encontrado.", "alert-error"); return; }
+            if (v.Tipo != TipoVale.Entrada) { Mostrar($"El vale {v.Referencia} es de tipo {v.Tipo}, no Entrada.", "alert-error"); return; }
+            if (v.Estado != EstadoVale.Open) { Mostrar($"El vale {v.Referencia} está {v.Estado}, no se puede procesar.", "alert-error"); return; }
+
+            _vale = v;
+            await ActualizarProgreso();
+            StateHasChanged();
+            await Task.Delay(50);
+            await _inputScan.FocusAsync();
+        }
+        catch (Exception ex) { Mostrar(ex.Message, "alert-error"); }
+        finally { _buscando = false; }
+    }
+
+    async Task ProcesarCase()
+    {
+        if (_vale is null) return;
+        if (string.IsNullOrWhiteSpace(_caseInput)) return;
+        _procesando = true; _msg = "";
+
+        try
+        {
+            var detalle = _vale.Detalles.FirstOrDefault(d => d.CaseCode == _caseInput);
+            if (detalle is null)
+            {
+                Mostrar($"CASE {_caseInput} NO está en este vale. Rechazado.", "alert-error");
+                _caseInput = "";
+                await _inputScan.FocusAsync();
+                return;
+            }
+
+            if (detalle.Procesado)
+            {
+                Mostrar($"CASE {_caseInput} ya fue procesado en este vale.", "alert-warn");
+                _caseInput = "";
+                await _inputScan.FocusAsync();
+                return;
+            }
+
+            await Inventario.RegistrarEntradaAsync(
+                detalle.CaseCode,
+                detalle.Item ?? "",
+                detalle.Descripcion ?? "",
+                detalle.Qty,
+                _vale.Referencia,
+                Session.User!.Username,
+                Session.User.TenantId);
+
+            await ValesSvc.MarcarDetalleProcesadoAsync(_vale.Id, detalle.CaseCode, Session.User!.Username);
+
+            // Intentar cerrar automáticamente si está completo
+            bool cerrado = await ValesSvc.CerrarSiCompletoAsync(_vale.Id);
+
+            _vale = await ValesSvc.ObtenerPorIdAsync(_vale.Id);
+            await ActualizarProgreso();
+
+            if (cerrado)
+            {
+                Mostrar($"✓ {detalle.CaseCode} registrado. Vale completado y cerrado.", "alert-ok");
+            }
+            else
+            {
+                Mostrar($"✓ {detalle.CaseCode} registrado ({detalle.Qty} pz).", "alert-ok");
+                _caseInput = "";
+                await _inputScan.FocusAsync();
+            }
+        }
+        catch (Exception ex) { Mostrar(ex.Message, "alert-error"); }
+        finally { _procesando = false; }
+    }
+
+    async Task ActualizarProgreso()
+    {
+        if (_vale is null) return;
+        var (p, pend, t) = await ValesSvc.ContarProgresoAsync(_vale.Id);
+        _procesados = p; _pendientes = pend; _total = t;
+    }
+
+    void CerrarPantalla()
+    {
+        _vale = null; _refInput = ""; _caseInput = "";
+        _procesados = _pendientes = _total = 0;
+        _msg = "";
+    }
+
+    void Mostrar(string msg, string css) { _msg = msg; _msgCss = css; }
+}

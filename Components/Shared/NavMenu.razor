@@ -1,0 +1,62 @@
+@namespace JeDax.Components.Shared
+@inject UserSession Session
+@inject TenantContext Tenant
+@implements IDisposable
+@rendermode RenderMode.InteractiveServer
+
+<nav class="navbar">
+    <span class="brand">JeDax</span>
+    @if (Session.IsAuthenticated && Session.User is not null)
+    {
+        @if (Permisos.PuedeUsarIngreso(Session.User.Rol))
+        {
+            <a href="/ingreso">Ingreso</a>
+        }
+        @if (Permisos.PuedeVerStock(Session.User.Rol))
+        {
+            <a href="/stock">Stock</a>
+        }
+
+        @if (Permisos.PuedeMoverInventario(Session.User.Rol))
+        {
+            <a href="/move-inventory">Mover</a>
+        }
+        @if (Permisos.PuedeRegistrarSalidas(Session.User.Rol))
+        {
+            <a href="/salidas">Salidas</a>
+        }
+        @if (Permisos.PuedeVerImportarVales(Session.User.Rol))
+        {
+            <a href="/vales">Vales</a>
+        }
+        <a href="/historial">Historial</a>
+        @if (Permisos.PuedeAccederCaseGenerador(Session.User.Rol))
+        {
+            <a href="/case-generador">CASE Gen</a>
+        }
+        @if (Permisos.PuedeAdministrarUsuarios(Session.User.Rol))
+        {
+            <a href="/admin">Admin</a>
+        }
+        <span class="nav-user">@Session.User.Username</span>
+        <a href="/logout">Salir</a>
+    }
+    else
+    {
+        <a href="/login">Iniciar sesión</a>
+    }
+</nav>
+
+@code {
+    protected override void OnInitialized()
+    {
+        Session.OnChange += HandleChange;
+    }
+
+    void HandleChange() => InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        Session.OnChange -= HandleChange;
+    }
+}

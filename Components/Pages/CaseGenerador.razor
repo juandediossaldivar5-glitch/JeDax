@@ -1,0 +1,68 @@
+@page "/case-generador"
+@inject CaseGeneradorService GeneradorSvc
+@inject UserSession Session
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+@rendermode RenderMode.InteractiveServer
+
+<h1>Generador de CASE</h1>
+
+@if (!string.IsNullOrEmpty(_msg)) { <div class="@_msgCss">@_msg</div> }
+
+<div class="form-section" style="max-width:480px">
+    <label>Número inicial</label>
+    <input type="number" value="@_desde" @oninput="e => _desde = int.TryParse(e.Value?.ToString(), out var v) ? v : 858000" class="input" style="max-width:180px" />
+    <label>Cantidad</label>
+    <input type="number" value="@_cantidad" @oninput="e => _cantidad = int.TryParse(e.Value?.ToString(), out var v) ? v : 50" class="input" style="max-width:120px" />
+    <button @onclick="Generar" class="btn-primary">Generar</button>
+</div>
+
+@if (_codigos is not null)
+{
+    <div style="margin-bottom:.75rem;display:flex;gap:.5rem;align-items:center">
+        <span style="color:var(--text-muted);font-size:.85rem">@_codigos.Count códigos @(_existentes.Any() ? $"· {_existentes.Count} ya existen" : "")</span>
+        <button @onclick="DescargarTxt" class="btn-outline">↓ Descargar .txt</button>
+    </div>
+    <div class="code-list">
+        @foreach (var c in _codigos.Take(200))
+        {
+            <span class="code-item @(_existentes.Contains(c) ? "code-existe" : "")">@c</span>
+        }
+    </div>
+}
+
+@code {
+    int _desde = 858000, _cantidad = 50;
+    List<string>? _codigos;
+    HashSet<string> _existentes = [];
+    string _msg = "", _msgCss = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Session.LoadAsync();
+        if (!Session.IsAuthenticated) { Nav.NavigateTo("/login"); return; }
+        if (!Permisos.PuedeAccederCaseGenerador(Session.User!.Rol)) Nav.NavigateTo("/stock");
+    }
+
+    async Task Generar()
+    {
+        try
+        {
+            _codigos = CaseGeneradorService.GenerarCodigos(_desde, _cantidad);
+            _existentes = await GeneradorSvc.FiltrarExistentesAsync(_codigos);
+            if (_existentes.Any()) Mostrar($"{_existentes.Count} ya existen en BD.", "alert-warn");
+            else _msg = "";
+        }
+        catch (Exception ex) { Mostrar(ex.Message, "alert-error"); }
+    }
+
+    async Task DescargarTxt()
+    {
+        if (_codigos is null) return;
+        string texto = CaseGeneradorService.GenerarTextoEtiquetas(_codigos);
+        var b64 = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(texto));
+        await JS.InvokeVoidAsync("downloadFile", b64, "cases.txt", "text/plain");
+    }
+
+    void Mostrar(string msg, string css) { _msg = msg; _msgCss = css; }
+}

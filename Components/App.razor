@@ -1,0 +1,30 @@
+@namespace JeDax.Components
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>JeDax — Control de Inventario</title>
+    <base href="/" />
+    <link rel="stylesheet" href="css/app.css" />
+    <HeadOutlet @rendermode="new InteractiveServerRenderMode(prerender: false)" />
+</head>
+<body>
+    <Routes @rendermode="new InteractiveServerRenderMode(prerender: false)" />
+    <script src="_framework/blazor.server.js"></script>
+    <script>
+        function downloadFile(base64, filename, mimeType) {
+            const a = document.createElement('a');
+            a.href = `data:${mimeType};base64,${base64}`;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+        function sessionSave(key, value) { localStorage.setItem(key, value); }
+        function sessionLoad(key) { return localStorage.getItem(key); }
+        function sessionClear(key) { localStorage.removeItem(key); }
+    </script>
+</body>
+</html>

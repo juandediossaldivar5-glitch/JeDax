@@ -1,0 +1,104 @@
+@page "/stock"
+@inject InventarioService Inventario
+@inject ExportService Export
+@inject UserSession Session
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+@rendermode RenderMode.InteractiveServer
+
+<h1>Stock</h1>
+
+@if (_resumen is not null)
+{
+    <div class="cards-row">
+        <div class="card"><span class="card-num">@_resumen.TotalCasesEnStock</span><span class="card-lbl">Cases en stock</span></div>
+        <div class="card"><span class="card-num">@_resumen.TotalPiezasEnStock</span><span class="card-lbl">Piezas totales</span></div>
+        <div class="card"><span class="card-num">@_resumen.CasesUbicados</span><span class="card-lbl">Ubicados</span></div>
+        <div class="card warn"><span class="card-num">@_resumen.CasesSinUbicar</span><span class="card-lbl">Sin ubicar</span></div>
+    </div>
+}
+
+<div class="toolbar" style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap">
+    <input value="@_filtro" @oninput="Filtrar" placeholder="Buscar CASE / Item / Ubicación…" class="input" />
+    <button @onclick="ExportarStock" class="btn-outline" style="margin-left:auto">↓ Exportar Excel</button>
+</div>
+
+@if (!_cargado)
+{
+    <p>Cargando…</p>
+}
+else if (!_casesFiltrados.Any())
+{
+
+    <p>Sin resultados.</p>
+}
+else
+{
+    <p style="color:var(--text-muted);font-size:.8rem;margin:.5rem 0">@_casesFiltrados.Count cases</p>
+    <table class="tabla">
+        <thead>
+            <tr><th>CASE</th><th>Item</th><th>Descripción</th><th>Ubicación</th><th>Qty Inicial</th><th>Qty Actual</th><th>Ref. Entrada</th><th>Estado</th><th>Fecha</th></tr>
+        </thead>
+        <tbody>
+            @foreach (var c in _casesFiltrados)
+            {
+                <tr class="@(c.Estado == EstadoCase.Recibido ? "row-warn" : "")">
+                    <td>@c.CaseCode</td>
+                    <td>@c.Producto.Item</td>
+                    <td>@c.Producto.Descripcion</td>
+                    <td>@UbicacionFormatter.Display(c.Ubicacion)</td>
+                    <td>@c.QtyInicial</td>
+                    <td>@c.QtyActual</td>
+                    <td>@c.RefEntrada</td>
+                    <td><span class="badge badge-@c.Estado.ToString().ToLower()">@c.Estado</span></td>
+                    <td>@c.FechaRegistro.ToLocalTime().ToString("dd/MM/yy HH:mm")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    List<Case>? _cases;
+    List<Case> _casesFiltrados = [];
+    ResumenStock? _resumen;
+    string _filtro = "";
+    bool _cargado = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        await Session.LoadAsync();
+        if (!Session.IsAuthenticated)
+        {
+            Nav.NavigateTo("/login", forceLoad: false);
+            return;
+        }
+
+        _resumen = await Inventario.ObtenerResumenAsync();
+        _cases = await Inventario.ObtenerStockActivoAsync();
+        _casesFiltrados = _cases;
+        _cargado = true;
+        StateHasChanged();
+    }
+
+    void Filtrar(ChangeEventArgs e)
+    {
+        _filtro = e.Value?.ToString() ?? "";
+        if (string.IsNullOrWhiteSpace(_filtro)) { _casesFiltrados = _cases ?? []; return; }
+        string f = _filtro.ToUpperInvariant();
+        _casesFiltrados = (_cases ?? []).Where(c =>
+            c.CaseCode.Contains(f) || c.Producto.Item.Contains(f) ||
+            c.Producto.Descripcion.ToUpperInvariant().Contains(f) ||
+            (c.Ubicacion?.Contains(f) ?? false) || (c.RefEntrada?.Contains(f) ?? false)
+        ).ToList();
+    }
+
+    async Task ExportarStock()
+    {
+        var bytes = await Export.ExportarStockAsync();
+        await JS.InvokeVoidAsync("downloadFile", Convert.ToBase64String(bytes), "jedax_stock.xlsx",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    }
+}
