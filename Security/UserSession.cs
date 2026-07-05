@@ -45,7 +45,10 @@ public class UserSession
             {
                 _cached = JsonSerializer.Deserialize<SessionUser>(json);
                 if (_cached is not null)
+                {
                     _tenant.Set(_cached.TenantId, _cached.TenantSlug);
+                    OnChange?.Invoke();
+                }
             }
         }
         catch { /* JS interop unavailable during SSR */ }
