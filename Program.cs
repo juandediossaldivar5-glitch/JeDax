@@ -2,6 +2,7 @@ using JeDax.Data;
 using JeDax.Security;
 using JeDax.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,7 +21,9 @@ if (usePostgres)
         Environment.GetEnvironmentVariable("PGDATABASE"),
         Environment.GetEnvironmentVariable("PGUSER"),
         Environment.GetEnvironmentVariable("PGPASSWORD"));
-    builder.Services.AddDbContext<AppDbContext>(opt => opt.UseNpgsql(cs));
+    builder.Services.AddDbContext<AppDbContext>(opt => opt
+        .UseNpgsql(cs)
+        .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning)));
 }
 else
 {
