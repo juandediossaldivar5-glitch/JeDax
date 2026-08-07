@@ -82,9 +82,10 @@ var app = builder.Build();
             DO $$
             DECLARE tbl text;
             BEGIN
-                FOREACH tbl IN ARRAY ARRAY['Tenants','Usuarios','Productos','Cases','Vales','ValeDetalles','MovimientoHistoricos','DataProtectionKeys']
+                FOREACH tbl IN ARRAY ARRAY['Tenants','Usuarios','Productos','Cases','Vales','ValeDetalles','Movimientos','DataProtectionKeys']
                 LOOP
-                    IF NOT EXISTS (
+                    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = tbl)
+                    AND NOT EXISTS (
                         SELECT 1 FROM information_schema.columns
                         WHERE table_name = tbl AND column_name = 'Id' AND is_identity = 'YES'
                     ) THEN
@@ -115,6 +116,24 @@ var app = builder.Build();
                     ALTER TABLE ""ValeDetalles"" ALTER COLUMN ""Procesado"" DROP DEFAULT;
                     ALTER TABLE ""ValeDetalles"" ALTER COLUMN ""Procesado"" TYPE boolean USING ""Procesado""::boolean;
                     ALTER TABLE ""ValeDetalles"" ALTER COLUMN ""Procesado"" SET DEFAULT false;
+                END IF;
+            END $$;
+        ");
+
+        // Fix columnas DateTime → type timestamp (migradas como TEXT desde SQLite)
+        await db.Database.ExecuteSqlRawAsync(@"
+            DO $$
+            BEGIN
+                IF (SELECT data_type FROM information_schema.columns
+                    WHERE table_name='Tenants' AND column_name='CreadoEn') = 'text' THEN
+                    ALTER TABLE ""Tenants""      ALTER COLUMN ""CreadoEn""       TYPE timestamp USING ""CreadoEn""::timestamp;
+                    ALTER TABLE ""Usuarios""     ALTER COLUMN ""CreadoEn""       TYPE timestamp USING ""CreadoEn""::timestamp;
+                    ALTER TABLE ""Vales""        ALTER COLUMN ""FechaCreacion""  TYPE timestamp USING ""FechaCreacion""::timestamp;
+                    ALTER TABLE ""Cases""        ALTER COLUMN ""FechaRegistro""  TYPE timestamp USING ""FechaRegistro""::timestamp;
+                    ALTER TABLE ""Cases""        ALTER COLUMN ""FechaUbicacion"" TYPE timestamp USING ""FechaUbicacion""::timestamp;
+                    ALTER TABLE ""Cases""        ALTER COLUMN ""FechaSalida""    TYPE timestamp USING ""FechaSalida""::timestamp;
+                    ALTER TABLE ""Movimientos""  ALTER COLUMN ""Fecha""          TYPE timestamp USING ""Fecha""::timestamp;
+                    ALTER TABLE ""ValeDetalles"" ALTER COLUMN ""FechaProcesado"" TYPE timestamp USING ""FechaProcesado""::timestamp;
                 END IF;
             END $$;
         ");
