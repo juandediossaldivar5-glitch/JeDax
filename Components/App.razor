@@ -8,23 +8,9 @@
     <title>JeDax — Control de Inventario</title>
     <base href="/" />
     <link rel="stylesheet" href="css/app.css" />
-    <HeadOutlet @rendermode="new InteractiveServerRenderMode(prerender: true)" />
+    <HeadOutlet />
 </head>
 <body>
-    <Routes @rendermode="new InteractiveServerRenderMode(prerender: true)" />
-    <script src="_framework/blazor.web.js"></script>
-    <script>
-        function downloadFile(base64, filename, mimeType) {
-            const a = document.createElement('a');
-            a.href = `data:${mimeType};base64,${base64}`;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-        }
-        function sessionSave(key, value) { localStorage.setItem(key, value); }
-        function sessionLoad(key) { return localStorage.getItem(key); }
-        function sessionClear(key) { localStorage.removeItem(key); }
-    </script>
+    <Routes />
 </body>
 </html>

@@ -1,10 +1,5 @@
 @page "/stock"
 @inject InventarioService Inventario
-@inject ExportService Export
-@inject UserSession Session
-@inject NavigationManager Nav
-@inject IJSRuntime JS
-@rendermode RenderMode.InteractiveServer
 
 <h1>Stock</h1>
 
@@ -18,18 +13,14 @@
     </div>
 }
 
-<div class="toolbar" style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap">
-    <input value="@_filtro" @oninput="Filtrar" placeholder="Buscar CASE / Item / Ubicación…" class="input" />
-    <button @onclick="ExportarStock" class="btn-outline" style="margin-left:auto">↓ Exportar Excel</button>
-</div>
+<form method="get" class="toolbar" style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap">
+    <input name="q" value="@Q" placeholder="Buscar CASE / Item / Ubicación…" class="input" />
+    <button type="submit" class="btn-outline">Buscar</button>
+    <a href="/api/export/stock" class="btn-outline" style="margin-left:auto;text-decoration:none">↓ Exportar Excel</a>
+</form>
 
-@if (!_cargado)
+@if (_casesFiltrados.Count == 0)
 {
-    <p>Cargando…</p>
-}
-else if (!_casesFiltrados.Any())
-{
-
     <p>Sin resultados.</p>
 }
 else
@@ -59,46 +50,27 @@ else
 }
 
 @code {
-    List<Case>? _cases;
-    List<Case> _casesFiltrados = [];
+    [SupplyParameterFromQuery] public string? Q { get; set; }
+
     ResumenStock? _resumen;
-    string _filtro = "";
-    bool _cargado = false;
+    List<Case> _casesFiltrados = [];
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    protected override async Task OnInitializedAsync()
     {
-        if (!firstRender) return;
-
-        await Session.LoadAsync();
-        if (!Session.IsAuthenticated)
-        {
-            Nav.NavigateTo("/login", forceLoad: false);
-            return;
-        }
-
         _resumen = await Inventario.ObtenerResumenAsync();
-        _cases = await Inventario.ObtenerStockActivoAsync();
-        _casesFiltrados = _cases;
-        _cargado = true;
-        StateHasChanged();
-    }
-
-    void Filtrar(ChangeEventArgs e)
-    {
-        _filtro = e.Value?.ToString() ?? "";
-        if (string.IsNullOrWhiteSpace(_filtro)) { _casesFiltrados = _cases ?? []; return; }
-        string f = _filtro.ToUpperInvariant();
-        _casesFiltrados = (_cases ?? []).Where(c =>
-            c.CaseCode.Contains(f) || c.Producto.Item.Contains(f) ||
-            c.Producto.Descripcion.ToUpperInvariant().Contains(f) ||
-            (c.Ubicacion?.Contains(f) ?? false) || (c.RefEntrada?.Contains(f) ?? false)
-        ).ToList();
-    }
-
-    async Task ExportarStock()
-    {
-        var bytes = await Export.ExportarStockAsync();
-        await JS.InvokeVoidAsync("downloadFile", Convert.ToBase64String(bytes), "jedax_stock.xlsx",
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        var cases = await Inventario.ObtenerStockActivoAsync();
+        if (string.IsNullOrWhiteSpace(Q))
+        {
+            _casesFiltrados = cases;
+        }
+        else
+        {
+            string f = Q.ToUpperInvariant();
+            _casesFiltrados = cases.Where(c =>
+                c.CaseCode.Contains(f) || c.Producto.Item.Contains(f) ||
+                c.Producto.Descripcion.ToUpperInvariant().Contains(f) ||
+                (c.Ubicacion?.Contains(f) ?? false) || (c.RefEntrada?.Contains(f) ?? false)
+            ).ToList();
+        }
     }
 }

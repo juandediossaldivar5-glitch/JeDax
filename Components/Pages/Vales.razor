@@ -1,289 +1,88 @@
 @page "/vales"
 @inject ValeService ValesSvc
-@inject ValeImportService ImportSvc
-@inject InventarioService Inventario
-@inject ExportService Export
-@inject UserSession Session
-@inject NavigationManager Nav
-@inject IJSRuntime JS
-@rendermode RenderMode.InteractiveServer
 
 <h1>Vales</h1>
 
-@if (!string.IsNullOrEmpty(_msg))
+@if (!string.IsNullOrEmpty(Error))
 {
-    <div class="@_msgCss">@_msg</div>
+    <div class="alert-error">@Error</div>
+}
+@if (Ok == "1")
+{
+    <div class="alert-ok">Operación exitosa.</div>
 }
 
-@if (!_cargado)
+<form method="get" class="toolbar" style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap">
+    <select name="tipo" class="input" style="max-width:160px">
+        <option value="" selected="@(string.IsNullOrEmpty(Tipo))">Todos tipos</option>
+        <option value="Entrada" selected="@(Tipo == "Entrada")">Entrada</option>
+        <option value="Salida" selected="@(Tipo == "Salida")">Salida</option>
+    </select>
+    <select name="estado" class="input" style="max-width:160px">
+        <option value="" selected="@(string.IsNullOrEmpty(Estado))">Todos estados</option>
+        <option value="Open" selected="@(Estado == "Open")">Open</option>
+        <option value="Cerrado" selected="@(Estado == "Cerrado")">Cerrado</option>
+        <option value="Cancelado" selected="@(Estado == "Cancelado")">Cancelado</option>
+    </select>
+    <button type="submit" class="btn-outline">Filtrar</button>
+    <a href="/api/export/vales" class="btn-outline" style="margin-left:auto;text-decoration:none">↓ Exportar</a>
+</form>
+
+<div style="margin:1rem 0;padding:1rem;background:var(--surface);border-radius:var(--radius)">
+    <h3 style="margin-top:0">Importar vales desde Excel</h3>
+    <form method="post" action="/api/vales/importar" enctype="multipart/form-data" style="display:flex;gap:.75rem;align-items:center">
+        <input type="file" name="archivo" accept=".xlsx" required class="input" style="max-width:400px" />
+        <button type="submit" class="btn-primary">Importar</button>
+    </form>
+</div>
+
+@if (_vales.Count == 0)
 {
-    <p>Cargando…</p>
+    <p>Sin vales.</p>
 }
 else
 {
-    <div class="toolbar" style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap;margin-bottom:1rem">
-        <select value="@_filtroTipo" @onchange="e => { _filtroTipo = e.Value?.ToString() ?? string.Empty; _ = CargarVales(); }" class="input" style="max-width:160px">
-            <option value="">Todos</option>
-            <option value="Entrada">Entrada</option>
-            <option value="Salida">Salida</option>
-        </select>
-        <select value="@_filtroEstado" @onchange="e => { _filtroEstado = e.Value?.ToString() ?? string.Empty; _ = CargarVales(); }" class="input" style="max-width:160px">
-            <option value="">Todos los estados</option>
-            <option value="Open">Open</option>
-            <option value="Cerrado">Cerrado</option>
-            <option value="Cancelado">Cancelado</option>
-        </select>
-        @if (Permisos.PuedeVerImportarVales(_rol))
-        {
-            <label class="btn-primary" style="cursor:pointer;margin-left:auto">
-                ↑ Importar Excel
-                <InputFile OnChange="OnArchivoSeleccionado" accept=".xlsx" style="display:none" />
-            </label>
-            <button @onclick="ExportarVales" class="btn-outline">↓ Exportar</button>
-        }
-    </div>
-
-    @if (_importPreview is not null)
-    {
-        <div class="modal-overlay" @onclick="CerrarPreview">
-            <div class="modal" @onclick:stopPropagation style="max-width:700px;max-height:80vh;overflow:auto">
-                <h3>Vista previa de importación</h3>
-
-                @if (!_importPreview.Exito)
-                {
-                    <div class="alert-error">
-                        <strong>No se puede importar. Errores encontrados:</strong>
-                        <ul style="margin:.5rem 0 0 1rem">
-                            @foreach (var err in _importPreview.Errores)
-                            {
-                                <li>@err</li>
-                            }
-                        </ul>
-                    </div>
-                    <div style="display:flex;gap:.5rem;margin-top:.75rem">
-                        <button @onclick="CerrarPreview" class="btn-outline">Cerrar</button>
-                    </div>
-                }
-                else
-                {
-                    <p><strong>Referencia:</strong> @_importPreview.Referencia</p>
-                    <p><strong>Tipo:</strong> @_importPreview.Tipo</p>
-                    <p><strong>CASEs detectados:</strong> @_importPreview.Detalles.Count</p>
-                    <p><strong>Total piezas:</strong> @_importPreview.TotalPiezas</p>
-
-                    <table class="tabla" style="margin-top:.5rem">
-                        <thead><tr><th>CASE</th><th>Item</th><th>Descripción</th><th>Qty</th></tr></thead>
-                        <tbody>
-                            @foreach (var d in _importPreview.Detalles)
-                            {
-                                <tr>
-                                    <td>@d.CaseCode</td>
-                                    <td>@d.Item</td>
-                                    <td>@d.Descripcion</td>
-                                    <td>@d.Qty</td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-
-                    <div style="display:flex;gap:.5rem;margin-top:.75rem">
-                        <button @onclick="ConfirmarImport" class="btn-primary" disabled="@_importando">Confirmar importación</button>
-                        <button @onclick="CerrarPreview" class="btn-outline">Cancelar</button>
-                    </div>
-                }
-            </div>
-        </div>
-    }
-
-    @if (_vales is null)
-    {
-        <p>Cargando…</p>
-    }
-    else if (!_vales.Any())
-    {
-        <p>Sin vales.</p>
-    }
-    else
-    {
-        <table class="tabla">
-            <thead><tr><th>Referencia</th><th>Tipo</th><th>Estado</th><th>Creado por</th><th>Fecha</th><th>Cases</th><th>Acciones</th></tr></thead>
-            <tbody>
-                @foreach (var v in _vales)
-                {
-                    <tr>
-                        <td><button class="btn-link" @onclick="() => SeleccionarVale(v)">@v.Referencia</button></td>
-                        <td><span class="badge badge-@v.Tipo.ToString().ToLower()">@v.Tipo</span></td>
-                        <td><span class="badge badge-estado-@v.Estado.ToString().ToLower()">@v.Estado</span></td>
-                        <td>@v.CreadoPor</td>
-                        <td>@v.FechaCreacion.ToLocalTime().ToString("dd/MM/yy HH:mm")</td>
-                        <td>@v.Detalles.Count</td>
-                        <td>
-                            @if (v.Estado == EstadoVale.Open && _rol == RolUsuario.Admin)
-                            {
-                                <button @onclick="() => CancelarVale(v.Id)" class="btn-sm btn-sm-danger">Cancelar</button>
-                            }
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    }
-
-    @if (_valeSeleccionado is not null)
-    {
-        <div class="detalle-panel">
-            <div style="display:flex;justify-content:space-between;align-items:center">
-                <h3>Detalle: @_valeSeleccionado.Referencia (@_valeSeleccionado.Tipo)</h3>
-                <button @onclick="() => _valeSeleccionado = null" class="btn-outline">X Cerrar</button>
-            </div>
-
-            @if (!_valeSeleccionado.Detalles.Any())
+    <table class="tabla">
+        <thead>
+            <tr><th>Referencia</th><th>Tipo</th><th>Estado</th><th>Creado por</th><th>Fecha</th><th>Detalles</th><th></th></tr>
+        </thead>
+        <tbody>
+            @foreach (var v in _vales)
             {
-                <p style="color:var(--text-muted)">Sin cases.</p>
-            }
-            else
-            {
-                <table class="tabla">
-                    <thead>
-                        <tr>
-                            <th>CASE</th>
-                            @if (_valeSeleccionado.Tipo == TipoVale.Entrada)
-                            {
-                                <th>Item</th>
-                                <th>Descripción</th>
-                            }
-                            <th>Qty</th>
-                            <th>Procesado</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var d in _valeSeleccionado.Detalles)
+                <tr>
+                    <td>@v.Referencia</td>
+                    <td><span class="badge">@v.Tipo</span></td>
+                    <td><span class="badge badge-estado-@v.Estado.ToString().ToLower()">@v.Estado</span></td>
+                    <td>@v.CreadoPor</td>
+                    <td>@v.FechaCreacion.ToLocalTime().ToString("dd/MM/yy HH:mm")</td>
+                    <td>@v.Detalles.Count (@v.Detalles.Count(d => d.Procesado) procesados)</td>
+                    <td>
+                        @if (v.Estado == EstadoVale.Open)
                         {
-                            <tr class="@(d.Procesado ? "row-ok" : "")">
-                                <td>@d.CaseCode</td>
-                                @if (_valeSeleccionado.Tipo == TipoVale.Entrada)
-                                {
-                                    <td>@d.Item</td>
-                                    <td>@d.Descripcion</td>
-                                }
-                                <td>@d.Qty</td>
-                                <td>
-                                    @if (d.Procesado)
-                                    {
-                                        <span class="badge badge-ok">✓ @d.UsuarioProcesado</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge badge-warn">Pendiente</span>
-                                    }
-                                </td>
-                            </tr>
+                            <form method="post" action="/api/vales/cancelar" style="display:inline">
+                                <input type="hidden" name="valeId" value="@v.Id" />
+                                <button type="submit" class="btn-sm btn-sm-danger" onclick="return confirm('¿Cancelar vale?')">Cancelar</button>
+                            </form>
                         }
-                    </tbody>
-                </table>
+                    </td>
+                </tr>
             }
-        </div>
-    }
+        </tbody>
+    </table>
 }
 
 @code {
-    List<Vale>? _vales;
-    Vale? _valeSeleccionado;
-    string _filtroTipo = "", _filtroEstado = "", _msg = "", _msgCss = "";
-    bool _cargado, _importando;
-    RolUsuario _rol;
-    ValeImportService.ImportResult? _importPreview;
+    [SupplyParameterFromQuery] public string? Tipo { get; set; }
+    [SupplyParameterFromQuery] public string? Estado { get; set; }
+    [SupplyParameterFromQuery] public string? Error { get; set; }
+    [SupplyParameterFromQuery] public string? Ok { get; set; }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    List<Vale> _vales = [];
+
+    protected override async Task OnInitializedAsync()
     {
-        if (!firstRender) return;
-
-        await Session.LoadAsync();
-        if (!Session.IsAuthenticated)
-        {
-            Nav.NavigateTo("/login", forceLoad: false);
-            return;
-        }
-
-        try
-        {
-            _rol = Session.User!.Rol;
-            await CargarVales();
-            _cargado = true;
-        }
-        catch (Exception ex)
-        {
-            Mostrar($"Error al cargar vales: {ex.Message}", "alert-error");
-            _cargado = true;
-        }
-        StateHasChanged();
+        TipoVale? t = Enum.TryParse<TipoVale>(Tipo, out var tv) ? tv : null;
+        EstadoVale? e = Enum.TryParse<EstadoVale>(Estado, out var ev) ? ev : null;
+        _vales = await ValesSvc.ListarAsync(t, e);
     }
-
-    async Task CargarVales()
-    {
-        TipoVale? tipo = _filtroTipo switch { "Entrada" => TipoVale.Entrada, "Salida" => TipoVale.Salida, _ => null };
-        EstadoVale? estado = _filtroEstado switch { "Open" => EstadoVale.Open, "Cerrado" => EstadoVale.Cerrado, "Cancelado" => EstadoVale.Cancelado, _ => null };
-        _vales = await ValesSvc.ListarAsync(tipo, estado);
-        StateHasChanged();
-    }
-
-    async Task OnArchivoSeleccionado(InputFileChangeEventArgs e)
-    {
-        _msg = "";
-        try
-        {
-            using var stream = new MemoryStream();
-            await e.File.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024).CopyToAsync(stream);
-            stream.Position = 0;
-            _importPreview = await ImportSvc.ParsearAsync(stream);
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            Mostrar($"Error al leer archivo: {ex.Message}", "alert-error");
-        }
-    }
-
-    async Task ConfirmarImport()
-    {
-        if (_importPreview is null || !_importPreview.Exito) return;
-        _importando = true;
-        try
-        {
-            var vale = await ImportSvc.CommitAsync(_importPreview, Session.User!.Username);
-            Mostrar($"✓ Vale {vale.Referencia} importado con {vale.Detalles.Count} CASEs.", "alert-ok");
-            _importPreview = null;
-            await CargarVales();
-        }
-        catch (Exception ex)
-        {
-            Mostrar(ex.Message, "alert-error");
-        }
-        finally { _importando = false; }
-    }
-
-    void CerrarPreview() => _importPreview = null;
-
-    void SeleccionarVale(Vale v) => _valeSeleccionado = v;
-
-    async Task CancelarVale(int id)
-    {
-        try
-        {
-            await ValesSvc.CancelarValeAsync(id);
-            Mostrar("Vale cancelado.", "alert-ok");
-            await CargarVales();
-            _valeSeleccionado = null;
-        }
-        catch (Exception ex) { Mostrar(ex.Message, "alert-error"); }
-    }
-
-    async Task ExportarVales()
-    {
-        var bytes = await Export.ExportarValesAsync();
-        await JS.InvokeVoidAsync("downloadFile", Convert.ToBase64String(bytes), "jedax_vales.xlsx",
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-    }
-
-    void Mostrar(string msg, string css) { _msg = msg; _msgCss = css; }
 }

@@ -1,62 +1,46 @@
 @namespace JeDax.Components.Shared
-@inject UserSession Session
-@inject TenantContext Tenant
-@implements IDisposable
-@rendermode RenderMode.InteractiveServer
+@inject CurrentUser Current
 
 <nav class="navbar">
     <span class="brand">JeDax</span>
-    @if (Session.IsAuthenticated && Session.User is not null)
+    @if (Current.IsAuthenticated && Current.User is not null)
     {
-        @if (Permisos.PuedeUsarIngreso(Session.User.Rol))
+        @if (Permisos.PuedeUsarIngreso(Current.User.Rol))
         {
             <a href="/ingreso">Ingreso</a>
         }
-        @if (Permisos.PuedeVerStock(Session.User.Rol))
+        @if (Permisos.PuedeVerStock(Current.User.Rol))
         {
             <a href="/stock">Stock</a>
         }
-
-        @if (Permisos.PuedeMoverInventario(Session.User.Rol))
+        @if (Permisos.PuedeMoverInventario(Current.User.Rol))
         {
-            <a href="/move-inventory">Mover</a>
+            <a href="/move">Mover</a>
         }
-        @if (Permisos.PuedeRegistrarSalidas(Session.User.Rol))
+        @if (Permisos.PuedeRegistrarSalidas(Current.User.Rol))
         {
             <a href="/salidas">Salidas</a>
         }
-        @if (Permisos.PuedeVerImportarVales(Session.User.Rol))
+        @if (Permisos.PuedeVerImportarVales(Current.User.Rol))
         {
             <a href="/vales">Vales</a>
         }
         <a href="/historial">Historial</a>
-        @if (Permisos.PuedeAccederCaseGenerador(Session.User.Rol))
+        @if (Permisos.PuedeAccederCaseGenerador(Current.User.Rol))
         {
             <a href="/case-generador">CASE Gen</a>
         }
-        @if (Permisos.PuedeAdministrarUsuarios(Session.User.Rol))
+        @if (Permisos.PuedeAdministrarUsuarios(Current.User.Rol))
         {
             <a href="/admin">Admin</a>
         }
-        <span class="nav-user">@Session.User.Username</span>
-        <a href="/logout">Salir</a>
+        <span class="nav-user">@Current.User.Username</span>
+        <form method="post" action="/api/logout" style="display:inline;margin:0">
+            <button type="submit" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:.875rem;padding:0">Salir</button>
+        </form>
     }
     else
     {
         <a href="/login">Iniciar sesión</a>
     }
 </nav>
-
-@code {
-    protected override void OnInitialized()
-    {
-        Session.OnChange += HandleChange;
-    }
-
-    void HandleChange() => InvokeAsync(StateHasChanged);
-
-    public void Dispose()
-    {
-        Session.OnChange -= HandleChange;
-    }
-}
