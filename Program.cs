@@ -160,6 +160,7 @@ app.UseStaticFiles();
 app.MapGet("/health", () => "JeDax OK");
 app.MapGet("/", () => Results.Redirect("/login"));
 
+app.MapBlazorHub();
 app.MapRazorComponents<JeDax.Components.App>()
     .AddInteractiveServerRenderMode()
     .DisableAntiforgery();
