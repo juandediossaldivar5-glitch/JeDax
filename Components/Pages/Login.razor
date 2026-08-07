@@ -1,63 +1,19 @@
 @page "/login"
-@inject AuthService Auth
-@inject UserSession Session
-@inject NavigationManager Nav
-@rendermode RenderMode.InteractiveServer
 
 <h1>Iniciar sesión</h1>
 
-@if (!string.IsNullOrEmpty(_error))
+@if (Error == "1")
 {
-    <div class="alert-error">@_error</div>
+    <div class="alert-error">Credenciales incorrectas.</div>
 }
 
-<div class="form-login">
-    <input value="@_slug"
-           @oninput="e => _slug = e.Value?.ToString() ?? string.Empty"
-           placeholder="Empresa (slug)" class="input" />
-
-    <input value="@_username"
-           @oninput="OnUsuarioInput"
-           placeholder="Usuario" class="input" />
-
-    <input type="password"
-           value="@_password"
-           @oninput="e => _password = e.Value?.ToString() ?? string.Empty"
-           placeholder="Contraseña" class="input" />
-
-    <button @onclick="DoLogin" class="btn-primary">Entrar</button>
-</div>
+<form method="post" action="/api/login" class="form-login">
+    <input type="text" name="slug" placeholder="Empresa (slug)" class="input" required autofocus />
+    <input type="text" name="username" placeholder="Usuario" class="input" required />
+    <input type="password" name="password" placeholder="Contraseña" class="input" required />
+    <button type="submit" class="btn-primary">Entrar</button>
+</form>
 
 @code {
-    string _slug = "", _username = "", _password = "", _error = "";
-
-    void OnUsuarioInput(ChangeEventArgs e)
-    {
-        string val = e.Value?.ToString() ?? "";
-        int idx = val.IndexOf('!');
-        if (idx >= 0)
-        {
-            var parts = val.Split('!', 2);
-            _username = parts[0].Trim();
-            _password = parts.Length > 1 ? parts[1].Trim() : "";
-            if (!string.IsNullOrWhiteSpace(_username) && !string.IsNullOrWhiteSpace(_password))
-                InvokeAsync(DoLogin);
-        }
-        else _username = val;
-    }
-
-    async Task DoLogin()
-    {
-        _error = "";
-        if (string.IsNullOrWhiteSpace(_slug) || string.IsNullOrWhiteSpace(_username))
-        { _error = "Completa todos los campos."; return; }
-
-        var (ok, session) = await Auth.LoginAsync(_slug.Trim(), _username.Trim(), _password.Trim());
-        if (!ok || session is null) { _error = "Credenciales incorrectas."; return; }
-
-        await Session.SetAsync(session);
-
-        await Task.Delay(1);
-        Nav.NavigateTo("/stock", forceLoad: false);
-    }
+    [SupplyParameterFromQuery] public string? Error { get; set; }
 }

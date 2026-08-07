@@ -103,6 +103,30 @@ app.UseStaticFiles();
 app.MapGet("/health", () => "JeDax OK");
 app.MapGet("/", () => Results.Redirect("/login"));
 
+// Fallback login por HTTP POST (no requiere circuito Blazor).
+app.MapPost("/api/login", async (HttpContext ctx, AuthService auth) =>
+{
+    var form = await ctx.Request.ReadFormAsync();
+    var slug = form["slug"].ToString().Trim();
+    var username = form["username"].ToString().Trim();
+    var password = form["password"].ToString().Trim();
+
+    var (ok, session) = await auth.LoginAsync(slug, username, password);
+    if (!ok || session is null)
+        return Results.Redirect("/login?error=1");
+
+    var sessionJson = System.Text.Json.JsonSerializer.Serialize(session);
+    var escaped = System.Text.Json.JsonSerializer.Serialize(sessionJson);
+    var html = $@"<!DOCTYPE html><html><head><meta charset=""utf-8""><title>JeDax</title></head><body>
+<script>
+localStorage.setItem('jedax_session', {escaped});
+window.location.href = '/stock';
+</script>
+<p>Iniciando sesión…</p>
+</body></html>";
+    return Results.Content(html, "text/html; charset=utf-8");
+});
+
 app.MapRazorComponents<JeDax.Components.App>()
     .AddInteractiveServerRenderMode()
     .DisableAntiforgery();
