@@ -8,10 +8,10 @@
     <title>JeDax — Control de Inventario</title>
     <base href="/" />
     <link rel="stylesheet" href="css/app.css" />
-    <HeadOutlet @rendermode="new InteractiveServerRenderMode(prerender: false)" />
+    <HeadOutlet @rendermode="new InteractiveServerRenderMode(prerender: true)" />
 </head>
 <body>
-    <Routes @rendermode="new InteractiveServerRenderMode(prerender: false)" />
+    <Routes @rendermode="new InteractiveServerRenderMode(prerender: true)" />
     <script src="_framework/blazor.web.js"></script>
     <script>
         function downloadFile(base64, filename, mimeType) {

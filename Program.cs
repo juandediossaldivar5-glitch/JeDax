@@ -98,6 +98,7 @@ if (app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 app.UseStaticFiles();
 
+app.MapGet("/health", () => "JeDax OK");
 app.MapGet("/", () => Results.Redirect("/login"));
 
 app.MapRazorComponents<JeDax.Components.App>()
