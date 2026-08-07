@@ -17,9 +17,13 @@
         Blazor.start({
             circuit: {
                 configureSignalR: function (builder) {
-                    builder.withUrl('/_blazor', { transport: 4 }); // 4 = LongPolling
+                    builder.withUrl('/_blazor', { transport: 4 });
                 }
             }
+        }).then(function() {
+            console.log('Blazor conectado OK');
+        }).catch(function(err) {
+            alert('Error Blazor: ' + err);
         });
         function downloadFile(base64, filename, mimeType) {
             const a = document.createElement('a');
