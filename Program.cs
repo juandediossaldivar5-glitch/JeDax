@@ -97,11 +97,11 @@ if (!app.Environment.IsDevelopment())
 if (app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 app.UseStaticFiles();
-app.UseAntiforgery();
 
 app.MapGet("/", () => Results.Redirect("/login"));
 
 app.MapRazorComponents<JeDax.Components.App>()
-    .AddInteractiveServerRenderMode();
+    .AddInteractiveServerRenderMode()
+    .DisableAntiforgery();
 
 app.Run();
