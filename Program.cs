@@ -54,10 +54,9 @@ var app = builder.Build();
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await db.Database.MigrateAsync();
 
-    // Ensure DataProtectionKeys.Id is an IDENTITY column on PostgreSQL
-    // (migration was originally generated with SQLite tooling and lacks identity).
     if (usePostgres)
     {
+        // Fix DataProtectionKeys.Id → IDENTITY (migración generada con SQLite)
         await db.Database.ExecuteSqlRawAsync(@"
             DO $$
             BEGIN
@@ -74,6 +73,20 @@ var app = builder.Build();
                         ""Xml"" text,
                         CONSTRAINT ""PK_DataProtectionKeys"" PRIMARY KEY (""Id"")
                     );
+                END IF;
+            END $$;
+        ");
+
+        // Fix columnas bool → type boolean (migradas como INTEGER desde SQLite)
+        await db.Database.ExecuteSqlRawAsync(@"
+            DO $$
+            BEGIN
+                IF (SELECT data_type FROM information_schema.columns
+                    WHERE table_name='Tenants' AND column_name='Activo') = 'integer' THEN
+                    ALTER TABLE ""Tenants""   ALTER COLUMN ""Activo""    TYPE boolean USING ""Activo""::boolean;
+                    ALTER TABLE ""Usuarios""  ALTER COLUMN ""Activo""    TYPE boolean USING ""Activo""::boolean;
+                    ALTER TABLE ""Productos"" ALTER COLUMN ""Activo""    TYPE boolean USING ""Activo""::boolean;
+                    ALTER TABLE ""Vales""     ALTER COLUMN ""Procesado"" TYPE boolean USING ""Procesado""::boolean;
                 END IF;
             END $$;
         ");
