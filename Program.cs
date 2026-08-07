@@ -10,14 +10,24 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddScoped<TenantContext>();
 
-string? connectionString = builder.Configuration.GetConnectionString("Default");
 bool usePostgres = builder.Configuration.GetValue<bool>("UsePostgres");
 
 if (usePostgres)
-    builder.Services.AddDbContext<AppDbContext>(opt => opt.UseNpgsql(connectionString));
+{
+    var cs = string.Format("Host={0};Port={1};Database={2};Username={3};Password={4}",
+        Environment.GetEnvironmentVariable("PGHOST"),
+        Environment.GetEnvironmentVariable("PGPORT"),
+        Environment.GetEnvironmentVariable("PGDATABASE"),
+        Environment.GetEnvironmentVariable("PGUSER"),
+        Environment.GetEnvironmentVariable("PGPASSWORD"));
+    builder.Services.AddDbContext<AppDbContext>(opt => opt.UseNpgsql(cs));
+}
 else
+{
+    var connectionString = builder.Configuration.GetConnectionString("Default");
     builder.Services.AddDbContext<AppDbContext>(opt =>
         opt.UseSqlite(connectionString ?? "Data Source=jedax_dev.db"));
+}
 
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<InventarioService>();
