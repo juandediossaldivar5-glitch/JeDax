@@ -97,6 +97,7 @@ if (!app.Environment.IsDevelopment())
 if (app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 
+app.UseWebSockets();
 app.UseStaticFiles();
 
 app.MapGet("/health", () => "JeDax OK");
