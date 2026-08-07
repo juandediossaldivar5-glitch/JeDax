@@ -79,8 +79,7 @@ var app = builder.Build();
         ");
     }
 
-    if (app.Environment.IsDevelopment())
-        await JeDax.Data.DbSeeder.SeedAsync(db);
+    await JeDax.Data.DbSeeder.SeedAsync(db);
 }
 
 app.UseForwardedHeaders(new ForwardedHeadersOptions
