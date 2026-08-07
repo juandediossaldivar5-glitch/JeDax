@@ -83,10 +83,21 @@ var app = builder.Build();
             BEGIN
                 IF (SELECT data_type FROM information_schema.columns
                     WHERE table_name='Tenants' AND column_name='Activo') = 'integer' THEN
+                    ALTER TABLE ""Tenants""      ALTER COLUMN ""Activo""    DROP DEFAULT;
                     ALTER TABLE ""Tenants""      ALTER COLUMN ""Activo""    TYPE boolean USING ""Activo""::boolean;
+                    ALTER TABLE ""Tenants""      ALTER COLUMN ""Activo""    SET DEFAULT false;
+
+                    ALTER TABLE ""Usuarios""     ALTER COLUMN ""Activo""    DROP DEFAULT;
                     ALTER TABLE ""Usuarios""     ALTER COLUMN ""Activo""    TYPE boolean USING ""Activo""::boolean;
+                    ALTER TABLE ""Usuarios""     ALTER COLUMN ""Activo""    SET DEFAULT false;
+
+                    ALTER TABLE ""Productos""    ALTER COLUMN ""Activo""    DROP DEFAULT;
                     ALTER TABLE ""Productos""    ALTER COLUMN ""Activo""    TYPE boolean USING ""Activo""::boolean;
+                    ALTER TABLE ""Productos""    ALTER COLUMN ""Activo""    SET DEFAULT false;
+
+                    ALTER TABLE ""ValeDetalles"" ALTER COLUMN ""Procesado"" DROP DEFAULT;
                     ALTER TABLE ""ValeDetalles"" ALTER COLUMN ""Procesado"" TYPE boolean USING ""Procesado""::boolean;
+                    ALTER TABLE ""ValeDetalles"" ALTER COLUMN ""Procesado"" SET DEFAULT false;
                 END IF;
             END $$;
         ");
