@@ -12,8 +12,15 @@
 </head>
 <body>
     <Routes @rendermode="new InteractiveServerRenderMode(prerender: true)" />
-    <script src="_framework/blazor.web.js"></script>
+    <script src="_framework/blazor.web.js" autostart="false"></script>
     <script>
+        Blazor.start({
+            circuit: {
+                configureSignalR: function (builder) {
+                    builder.withUrl('/_blazor', { transport: 4 }); // 4 = LongPolling
+                }
+            }
+        });
         function downloadFile(base64, filename, mimeType) {
             const a = document.createElement('a');
             a.href = `data:${mimeType};base64,${base64}`;
