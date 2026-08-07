@@ -14,10 +14,10 @@ namespace JeDax.Migrations
                 name: "DataProtectionKeys",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    FriendlyName = table.Column<string>(type: "TEXT", nullable: true),
-                    Xml = table.Column<string>(type: "TEXT", nullable: true)
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", Npgsql.EntityFrameworkCore.PostgreSQL.Metadata.NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    FriendlyName = table.Column<string>(type: "text", nullable: true),
+                    Xml = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {
