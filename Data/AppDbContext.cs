@@ -1,9 +1,10 @@
 using JeDax.Models;
+using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace JeDax.Data;
 
-public class AppDbContext : DbContext
+public class AppDbContext : DbContext, IDataProtectionKeyContext
 {
     private readonly TenantContext _tenant;
 
@@ -13,6 +14,7 @@ public class AppDbContext : DbContext
         _tenant = tenant ?? new TenantContext();
     }
 
+    public DbSet<DataProtectionKey> DataProtectionKeys => Set<DataProtectionKey>();
     public DbSet<Tenant> Tenants => Set<Tenant>();
     public DbSet<Usuario> Usuarios => Set<Usuario>();
     public DbSet<Producto> Productos => Set<Producto>();

@@ -1,6 +1,7 @@
 using JeDax.Data;
 using JeDax.Security;
 using JeDax.Services;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -32,6 +33,9 @@ else
     builder.Services.AddDbContext<AppDbContext>(opt =>
         opt.UseSqlite(connectionString ?? "Data Source=jedax_dev.db"));
 }
+
+builder.Services.AddDataProtection()
+    .PersistKeysToDbContext<AppDbContext>();
 
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<InventarioService>();

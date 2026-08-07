@@ -9,3 +9,4 @@ obj/
 appsettings.*.json
 !appsettings.Production.json
 Properties/launchSettings.json
+.gstack/
