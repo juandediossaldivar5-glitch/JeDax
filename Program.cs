@@ -1,6 +1,7 @@
 using JeDax.Data;
 using JeDax.Security;
 using JeDax.Services;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 
@@ -51,6 +52,11 @@ var app = builder.Build();
     if (app.Environment.IsDevelopment())
         await JeDax.Data.DbSeeder.SeedAsync(db);
 }
+
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
 
 if (!app.Environment.IsDevelopment())
 {
