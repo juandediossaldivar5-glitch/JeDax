@@ -1,23 +1,27 @@
 @page "/salidas"
+@using JeDax.Components.Shared
 
-<h1>Registro de Salidas</h1>
+<h1><Icon Name="salidas" Size="32" /> Registro de Salidas</h1>
+<p style="color:var(--muted);margin-bottom:2rem;max-width:600px">
+    Retira un CASE del almacén. Puedes hacer salida <b>parcial</b> (cantidad específica) o <b>total</b> (usa 0).
+</p>
 
 @if (!string.IsNullOrEmpty(Error))
 {
-    <div class="alert-error">@Error</div>
+    <div class="alert-error"><Icon Name="info" Size="18" /> @Error</div>
 }
 
 <form method="post" action="/api/inventario/salida" class="form-section">
-    <label>CASE code</label>
+    <label><Icon Name="box" Size="12" /> CASE code</label>
     <input name="caseCode" required autofocus class="input" placeholder="CASE00000000" />
 
-    <label>Referencia de salida</label>
-    <input name="refSalida" required class="input" />
+    <label><Icon Name="vales" Size="12" /> Referencia de salida</label>
+    <input name="refSalida" required class="input" placeholder="Número de vale/pedido" />
 
-    <label>Cantidad (0 = salida total)</label>
+    <label><Icon Name="hash" Size="12" /> Cantidad (0 = total)</label>
     <input type="number" name="qty" required min="0" value="0" class="input" />
 
-    <button type="submit" class="btn-primary">Registrar salida</button>
+    <button type="submit" class="btn-primary"><Icon Name="check" Size="16" /> Registrar salida</button>
 </form>
 
 @code {

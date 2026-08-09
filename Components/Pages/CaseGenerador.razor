@@ -1,22 +1,32 @@
 @page "/case-generador"
+@using JeDax.Components.Shared
 @inject CaseGeneradorService GeneradorSvc
 
-<h1>Generador de CASE</h1>
+<h1><Icon Name="case-gen" Size="32" /> Generador de CASE</h1>
+<p style="color:var(--muted);margin-bottom:2rem;max-width:600px">
+    Genera bloques de códigos CASE secuenciales listos para imprimir en etiquetas.
+</p>
 
 <form method="get" class="form-section">
-    <label>Desde (número de inicio)</label>
+    <label><Icon Name="hash" Size="12" /> Desde (número de inicio)</label>
     <input name="desde" type="number" required class="input" value="@(Desde ?? 858000)" />
-    <label>Cantidad</label>
+    <label><Icon Name="hash" Size="12" /> Cantidad (máx 5000)</label>
     <input name="cantidad" type="number" required class="input" min="1" max="5000" value="@(Cantidad ?? 100)" />
-    <button type="submit" class="btn-primary">Generar</button>
+    <button type="submit" class="btn-primary"><Icon Name="check" Size="16" /> Generar códigos</button>
 </form>
 
 @if (_codigos.Count > 0)
 {
-    <div style="margin-top:1rem">
-        <a href="/api/case-generador/download?desde=@Desde&cantidad=@Cantidad" class="btn-outline" style="text-decoration:none">↓ Descargar .txt</a>
-        <p style="color:var(--text-muted);font-size:.8rem;margin:.75rem 0">
-            @_codigos.Count códigos generados (@_existentes.Count ya existen en BD, marcados en rojo).
+    <div style="margin-top:2rem">
+        <a href="/api/case-generador/download?desde=@Desde&cantidad=@Cantidad" class="btn-outline">
+            <Icon Name="download" Size="14" /> Descargar .txt para etiquetas
+        </a>
+        <p style="color:var(--muted);font-size:12px;margin:1rem 0">
+            <Icon Name="info" Size="12" /> @_codigos.Count códigos generados.
+            @if (_existentes.Count > 0)
+            {
+                <span style="color:var(--red)"> @_existentes.Count ya existen en BD (marcados en rojo).</span>
+            }
         </p>
         <div class="code-list">
             @foreach (var c in _codigos)

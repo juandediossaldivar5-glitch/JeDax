@@ -1,44 +1,53 @@
 @page "/vales"
+@using JeDax.Components.Shared
 @inject ValeService ValesSvc
 
-<h1>Vales</h1>
+<h1><Icon Name="vales" Size="32" /> Vales</h1>
+<p style="color:var(--muted);margin-bottom:2rem;max-width:600px">
+    Gestión de vales de entrada y salida. Importa un Excel para crear lotes de vales automáticamente.
+</p>
 
 @if (!string.IsNullOrEmpty(Error))
 {
-    <div class="alert-error">@Error</div>
+    <div class="alert-error"><Icon Name="info" Size="18" /> @Error</div>
 }
 @if (Ok == "1")
 {
-    <div class="alert-ok">Operación exitosa.</div>
+    <div class="alert-ok"><Icon Name="check" Size="18" /> Operación exitosa.</div>
 }
 
 <form method="get" class="toolbar" style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap">
-    <select name="tipo" class="input" style="max-width:160px">
+    <select name="tipo" class="input" style="max-width:180px">
         <option value="" selected="@(string.IsNullOrEmpty(Tipo))">Todos tipos</option>
         <option value="Entrada" selected="@(Tipo == "Entrada")">Entrada</option>
         <option value="Salida" selected="@(Tipo == "Salida")">Salida</option>
     </select>
-    <select name="estado" class="input" style="max-width:160px">
+    <select name="estado" class="input" style="max-width:180px">
         <option value="" selected="@(string.IsNullOrEmpty(Estado))">Todos estados</option>
         <option value="Open" selected="@(Estado == "Open")">Open</option>
         <option value="Cerrado" selected="@(Estado == "Cerrado")">Cerrado</option>
         <option value="Cancelado" selected="@(Estado == "Cancelado")">Cancelado</option>
     </select>
-    <button type="submit" class="btn-outline">Filtrar</button>
-    <a href="/api/export/vales" class="btn-outline" style="margin-left:auto;text-decoration:none">↓ Exportar</a>
+    <button type="submit" class="btn-outline"><Icon Name="search" Size="14" /> Filtrar</button>
+    <a href="/api/export/vales" class="btn-outline" style="margin-left:auto"><Icon Name="download" Size="14" /> Exportar</a>
 </form>
 
-<div style="margin:1rem 0;padding:1rem;background:var(--surface);border-radius:var(--radius)">
-    <h3 style="margin-top:0">Importar vales desde Excel</h3>
-    <form method="post" action="/api/vales/importar" enctype="multipart/form-data" style="display:flex;gap:.75rem;align-items:center">
+<div style="margin:1.5rem 0;padding:1.5rem;background:var(--card);border-radius:14px;border:1px solid var(--border)">
+    <h3 style="margin-top:0"><Icon Name="upload" Size="18" /> Importar vales desde Excel</h3>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:1rem">Sube un archivo .xlsx para crear múltiples vales de una vez.</p>
+    <form method="post" action="/api/vales/importar" enctype="multipart/form-data" style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap">
         <input type="file" name="archivo" accept=".xlsx" required class="input" style="max-width:400px" />
-        <button type="submit" class="btn-primary">Importar</button>
+        <button type="submit" class="btn-primary"><Icon Name="upload" Size="14" /> Importar</button>
     </form>
 </div>
 
 @if (_vales.Count == 0)
 {
-    <p>Sin vales.</p>
+    <div class="empty-state">
+        <Icon Name="vales" Size="80" />
+        <h3>Sin vales</h3>
+        <p>Aún no hay vales registrados. Importa un Excel para empezar.</p>
+    </div>
 }
 else
 {

@@ -7,36 +7,38 @@
     {
         @if (Permisos.PuedeUsarIngreso(Current.User.Rol))
         {
-            <a href="/ingreso">Ingreso</a>
+            <a href="/ingreso" class="nav-link"><Icon Name="ingreso" Size="16" /><span>Ingreso</span></a>
         }
         @if (Permisos.PuedeVerStock(Current.User.Rol))
         {
-            <a href="/stock">Stock</a>
+            <a href="/stock" class="nav-link"><Icon Name="stock" Size="16" /><span>Stock</span></a>
         }
         @if (Permisos.PuedeMoverInventario(Current.User.Rol))
         {
-            <a href="/move">Mover</a>
+            <a href="/move" class="nav-link"><Icon Name="mover" Size="16" /><span>Mover</span></a>
         }
         @if (Permisos.PuedeRegistrarSalidas(Current.User.Rol))
         {
-            <a href="/salidas">Salidas</a>
+            <a href="/salidas" class="nav-link"><Icon Name="salidas" Size="16" /><span>Salidas</span></a>
         }
         @if (Permisos.PuedeVerImportarVales(Current.User.Rol))
         {
-            <a href="/vales">Vales</a>
+            <a href="/vales" class="nav-link"><Icon Name="vales" Size="16" /><span>Vales</span></a>
         }
-        <a href="/historial">Historial</a>
+        <a href="/historial" class="nav-link"><Icon Name="historial" Size="16" /><span>Historial</span></a>
         @if (Permisos.PuedeAccederCaseGenerador(Current.User.Rol))
         {
-            <a href="/case-generador">CASE Gen</a>
+            <a href="/case-generador" class="nav-link"><Icon Name="case-gen" Size="16" /><span>CASE Gen</span></a>
         }
         @if (Permisos.PuedeAdministrarUsuarios(Current.User.Rol))
         {
-            <a href="/admin">Admin</a>
+            <a href="/admin" class="nav-link"><Icon Name="admin" Size="16" /><span>Admin</span></a>
         }
-        <span class="nav-user">@Current.User.Username</span>
+        <span class="nav-user"><Icon Name="user" Size="14" /> @Current.User.Username</span>
         <form method="post" action="/api/logout" style="display:inline;margin:0">
-            <button type="submit" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:.875rem;padding:0">Salir</button>
+            <button type="submit" class="nav-logout" title="Salir">
+                <Icon Name="logout" Size="16" />
+            </button>
         </form>
     }
     else

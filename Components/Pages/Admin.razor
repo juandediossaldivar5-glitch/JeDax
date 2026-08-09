@@ -1,50 +1,56 @@
 @page "/admin"
+@using JeDax.Components.Shared
 @using JeDax.Models
 @inject UsuarioService UsuarioSvc
 
-<h1>Administración de Usuarios</h1>
+<h1><Icon Name="admin" Size="32" /> Administración</h1>
+<p style="color:var(--muted);margin-bottom:2rem;max-width:600px">
+    Gestiona los usuarios que acceden al sistema, sus roles y contraseñas.
+</p>
 
 @if (!string.IsNullOrEmpty(Error))
 {
-    <div class="alert-error">@Error</div>
+    <div class="alert-error"><Icon Name="info" Size="18" /> @Error</div>
 }
 @if (Ok == "1")
 {
-    <div class="alert-ok">Operación exitosa.</div>
+    <div class="alert-ok"><Icon Name="check" Size="18" /> Operación exitosa.</div>
 }
 
-<h3>Crear usuario</h3>
+<h3><Icon Name="user" Size="18" /> Crear usuario</h3>
 <form method="post" action="/api/admin/crear-usuario" class="form-section">
-    <label>Username</label>
-    <input name="username" required class="input" />
-    <label>Contraseña</label>
-    <input name="password" required class="input" />
-    <label>Rol</label>
+    <label><Icon Name="user" Size="12" /> Username</label>
+    <input name="username" required class="input" placeholder="ej: OPE_JUAN" />
+
+    <label><Icon Name="lock" Size="12" /> Contraseña</label>
+    <input name="password" required class="input" placeholder="mínimo 6 caracteres" />
+
+    <label><Icon Name="admin" Size="12" /> Rol</label>
     <select name="rol" required class="input">
         @foreach (var r in Enum.GetValues<RolUsuario>())
         {
             <option value="@r">@r</option>
         }
     </select>
-    <button type="submit" class="btn-primary">Crear</button>
+    <button type="submit" class="btn-primary"><Icon Name="check" Size="16" /> Crear usuario</button>
 </form>
 
-<h3>Usuarios existentes</h3>
+<h3 style="margin-top:2.5rem"><Icon Name="user" Size="18" /> Usuarios existentes</h3>
 <table class="tabla">
     <thead>
-        <tr><th>Username</th><th>Rol</th><th>Activo</th><th>Cambiar rol</th><th>Cambiar password</th><th></th></tr>
+        <tr><th>Username</th><th>Rol</th><th>Activo</th><th>Cambiar rol</th><th>Cambiar password</th><th>Estado</th></tr>
     </thead>
     <tbody>
         @foreach (var u in _usuarios)
         {
             <tr>
                 <td>@u.Username</td>
-                <td>@u.Rol</td>
-                <td>@(u.Activo ? "Sí" : "No")</td>
+                <td><span class="badge">@u.Rol</span></td>
+                <td>@(u.Activo ? "✅" : "❌")</td>
                 <td>
                     <form method="post" action="/api/admin/cambiar-rol" style="display:flex;gap:.3rem">
                         <input type="hidden" name="userId" value="@u.Id" />
-                        <select name="rol" class="input" style="max-width:120px;padding:.2rem">
+                        <select name="rol" class="input" style="max-width:140px;padding:.4rem">
                             @foreach (var r in Enum.GetValues<RolUsuario>())
                             {
                                 <option value="@r" selected="@(u.Rol == r)">@r</option>
@@ -56,7 +62,7 @@
                 <td>
                     <form method="post" action="/api/admin/cambiar-password" style="display:flex;gap:.3rem">
                         <input type="hidden" name="userId" value="@u.Id" />
-                        <input type="password" name="password" placeholder="Nueva" required class="input" style="max-width:130px;padding:.2rem" />
+                        <input type="password" name="password" placeholder="Nueva" required class="input" style="max-width:150px;padding:.4rem" />
                         <button type="submit" class="btn-sm">OK</button>
                     </form>
                 </td>

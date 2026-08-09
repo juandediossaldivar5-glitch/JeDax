@@ -1,31 +1,52 @@
 @page "/stock"
+@using JeDax.Components.Shared
 @inject InventarioService Inventario
 
-<h1>Stock</h1>
+<h1><Icon Name="stock" Size="32" /> Stock</h1>
 
 @if (_resumen is not null)
 {
     <div class="cards-row">
-        <div class="card"><span class="card-num">@_resumen.TotalCasesEnStock</span><span class="card-lbl">Cases en stock</span></div>
-        <div class="card"><span class="card-num">@_resumen.TotalPiezasEnStock</span><span class="card-lbl">Piezas totales</span></div>
-        <div class="card"><span class="card-num">@_resumen.CasesUbicados</span><span class="card-lbl">Ubicados</span></div>
-        <div class="card warn"><span class="card-num">@_resumen.CasesSinUbicar</span><span class="card-lbl">Sin ubicar</span></div>
+        <div class="card">
+            <span class="card-num">@_resumen.TotalCasesEnStock</span>
+            <span class="card-lbl"><Icon Name="box" Size="12" /> Cases en stock</span>
+        </div>
+        <div class="card">
+            <span class="card-num">@_resumen.TotalPiezasEnStock</span>
+            <span class="card-lbl"><Icon Name="hash" Size="12" /> Piezas totales</span>
+        </div>
+        <div class="card">
+            <span class="card-num">@_resumen.CasesUbicados</span>
+            <span class="card-lbl"><Icon Name="map-pin" Size="12" /> Ubicados</span>
+        </div>
+        <div class="card warn">
+            <span class="card-num">@_resumen.CasesSinUbicar</span>
+            <span class="card-lbl"><Icon Name="info" Size="12" /> Sin ubicar</span>
+        </div>
     </div>
 }
 
 <form method="get" class="toolbar" style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap">
     <input name="q" value="@Q" placeholder="Buscar CASE / Item / Ubicación…" class="input" />
-    <button type="submit" class="btn-outline">Buscar</button>
-    <a href="/api/export/stock" class="btn-outline" style="margin-left:auto;text-decoration:none">↓ Exportar Excel</a>
+    <button type="submit" class="btn-outline"><Icon Name="search" Size="14" /> Buscar</button>
+    <a href="/api/export/stock" class="btn-outline" style="margin-left:auto"><Icon Name="download" Size="14" /> Exportar Excel</a>
 </form>
 
 @if (_casesFiltrados.Count == 0)
 {
-    <p>Sin resultados.</p>
+    <div class="empty-state">
+        <Icon Name="empty-box" Size="120" />
+        <h3>Sin resultados</h3>
+        <p>@(string.IsNullOrEmpty(Q) ? "Aún no hay CASEs en el almacén. Ve a Ingreso para registrar el primero." : "Ningún CASE coincide con tu búsqueda.")</p>
+        @if (string.IsNullOrEmpty(Q))
+        {
+            <a href="/ingreso" class="btn-primary" style="text-decoration:none;margin-top:1rem;display:inline-block"><Icon Name="ingreso" Size="16" /> Registrar primer CASE</a>
+        }
+    </div>
 }
 else
 {
-    <p style="color:var(--text-muted);font-size:.8rem;margin:.5rem 0">@_casesFiltrados.Count cases</p>
+    <p style="color:var(--muted);font-size:12px;margin:.75rem 0"><Icon Name="info" Size="12" /> @_casesFiltrados.Count cases encontrados</p>
     <table class="tabla">
         <thead>
             <tr><th>CASE</th><th>Item</th><th>Descripción</th><th>Ubicación</th><th>Qty Inicial</th><th>Qty Actual</th><th>Ref. Entrada</th><th>Estado</th><th>Fecha</th></tr>

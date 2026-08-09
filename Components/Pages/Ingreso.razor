@@ -1,30 +1,33 @@
 @page "/ingreso"
-@inject CurrentUser Current
+@using JeDax.Components.Shared
 
-<h1>Ingreso de CASE</h1>
+<h1><Icon Name="ingreso" Size="32" /> Ingreso de CASE</h1>
+<p style="color:var(--muted);margin-bottom:2rem;max-width:600px">
+    Registra una caja física que llega al almacén. El CASE queda como <span class="badge badge-recibido">Recibido</span> hasta que le asignes ubicación.
+</p>
 
 @if (!string.IsNullOrEmpty(Error))
 {
-    <div class="alert-error">@Error</div>
+    <div class="alert-error"><Icon Name="info" Size="18" /> @Error</div>
 }
 
 <form method="post" action="/api/inventario/entrada" class="form-section">
-    <label>CASE code</label>
+    <label><Icon Name="box" Size="12" /> CASE code</label>
     <input name="caseCode" required autofocus class="input" placeholder="CASE00000000" />
 
-    <label>Item (part number)</label>
-    <input name="item" required class="input" />
+    <label><Icon Name="hash" Size="12" /> Item (part number)</label>
+    <input name="item" required class="input" placeholder="ej: 12345-A" />
 
-    <label>Descripción</label>
-    <input name="descripcion" required class="input" />
+    <label><Icon Name="info" Size="12" /> Descripción</label>
+    <input name="descripcion" required class="input" placeholder="Descripción del producto" />
 
-    <label>Cantidad</label>
+    <label><Icon Name="hash" Size="12" /> Cantidad</label>
     <input type="number" name="qty" required min="1" value="1" class="input" />
 
-    <label>Referencia de entrada (vale/invoice)</label>
-    <input name="refEntrada" required class="input" />
+    <label><Icon Name="vales" Size="12" /> Referencia de entrada</label>
+    <input name="refEntrada" required class="input" placeholder="Número de vale/invoice" />
 
-    <button type="submit" class="btn-primary">Registrar entrada</button>
+    <button type="submit" class="btn-primary"><Icon Name="check" Size="16" /> Registrar entrada</button>
 </form>
 
 @code {

@@ -1,31 +1,36 @@
 @page "/move"
+@using JeDax.Components.Shared
 @inject InventarioService Inventario
 
-<h1>Mover Inventario</h1>
+<h1><Icon Name="mover" Size="32" /> Mover Inventario</h1>
+<p style="color:var(--muted);margin-bottom:2rem;max-width:600px">
+    Cambia la ubicación de un CASE dentro del almacén. Formato de ubicación: <code style="background:var(--card);padding:2px 6px;border-radius:4px">RACK/COL/POS</code> (ej: <code style="background:var(--card);padding:2px 6px;border-radius:4px">A001/B02/000001</code>).
+</p>
 
 @if (!string.IsNullOrEmpty(Error))
 {
-    <div class="alert-error">@Error</div>
+    <div class="alert-error"><Icon Name="info" Size="18" /> @Error</div>
 }
 @if (Ok == "1" && !string.IsNullOrEmpty(Code))
 {
-    <div class="alert-ok">CASE @Code movido correctamente.</div>
+    <div class="alert-ok"><Icon Name="check" Size="18" /> CASE @Code movido correctamente.</div>
 }
 
 <form method="post" action="/api/inventario/mover" class="form-section">
-    <label>CASE code</label>
+    <label><Icon Name="box" Size="12" /> CASE code</label>
     <input name="caseCode" required autofocus class="input" placeholder="CASE00000000" value="@Code" />
 
-    <label>Nueva ubicación (formato XXXX/XXX/NNNNNN)</label>
+    <label><Icon Name="map-pin" Size="12" /> Nueva ubicación</label>
     <input name="ubicacion" required class="input" placeholder="A001/B02/000001" />
 
-    <button type="submit" class="btn-primary">Mover</button>
+    <button type="submit" class="btn-primary"><Icon Name="check" Size="16" /> Mover</button>
 </form>
 
 @if (_ubicaciones.Count > 0)
 {
-    <div style="margin-top:1.5rem">
-        <h3>Ubicaciones existentes (últimas)</h3>
+    <div style="margin-top:2rem">
+        <h3><Icon Name="map-pin" Size="18" /> Ubicaciones existentes</h3>
+        <p style="color:var(--muted);font-size:12px;margin-bottom:.75rem">Últimas ubicaciones registradas (click para copiar el formato).</p>
         <div class="code-list">
             @foreach (var u in _ubicaciones.Take(30))
             {
