@@ -400,7 +400,7 @@ app.MapPost("/api/bitacora/crear", async (HttpContext ctx, AppDbContext db, Curr
     };
 
     bool conflicto = await db.UnidadAccesos
-        .AnyAsync(u => u.Fecha == fecha && u.Horario == horario);
+        .AnyAsync(u => u.TenantId == cu.User!.TenantId && u.Fecha == fecha && u.Horario == horario);
 
     db.UnidadAccesos.Add(unidad);
     await db.SaveChangesAsync();
@@ -416,7 +416,7 @@ app.MapPost("/api/bitacora/actualizar/{id:int}", async (int id, HttpContext ctx,
         return Results.Forbid();
 
     var f = await ctx.Request.ReadFormAsync();
-    var unidad = await db.UnidadAccesos.FindAsync(id);
+    var unidad = await db.UnidadAccesos.FirstOrDefaultAsync(u => u.Id == id);
     if (unidad is null) return Results.NotFound();
 
     unidad.Estatus       = Enum.Parse<EstadoUnidad>(f["estatus"].ToString());
