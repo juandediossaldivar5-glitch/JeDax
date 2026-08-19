@@ -176,92 +176,6 @@ namespace JeDax.Migrations
                     b.ToTable("Tenants");
                 });
 
-            modelBuilder.Entity("JeDax.Models.UnidadAcceso", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime?>("ActualizadoEn")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ActualizadoPor")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Comentario")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("CreadoEn")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("CreadoPor")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Destino")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("Estatus")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateOnly>("Fecha")
-                        .HasColumnType("TEXT");
-
-                    b.Property<TimeOnly?>("HoraIngreso")
-                        .HasColumnType("TEXT");
-
-                    b.Property<TimeOnly?>("HoraSalida")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Horario")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("LineaTransportista")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("NombreOperador")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("NumeroCaja")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Origen")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("PersonaAcceso")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Placas")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ResponsableMkt")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("TelefonoOperador")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("TenantId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("TipoMovimiento")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TenantId", "Fecha");
-
-                    b.ToTable("UnidadAccesos");
-                });
-
             modelBuilder.Entity("JeDax.Models.Usuario", b =>
                 {
                     b.Property<int>("Id")
@@ -408,17 +322,6 @@ namespace JeDax.Migrations
                 {
                     b.HasOne("JeDax.Models.Tenant", "Tenant")
                         .WithMany("Productos")
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Tenant");
-                });
-
-            modelBuilder.Entity("JeDax.Models.UnidadAcceso", b =>
-                {
-                    b.HasOne("JeDax.Models.Tenant", "Tenant")
-                        .WithMany()
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
