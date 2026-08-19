@@ -1,4 +1,5 @@
 using JeDax.Data;
+using JeDax.Helpers;
 using JeDax.Models;
 using JeDax.Security;
 using JeDax.Services;
@@ -368,6 +369,68 @@ app.MapGet("/api/export/vales", async (ExportService ex) =>
 {
     var bytes = await ex.ExportarValesAsync();
     return Results.File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "jedax_vales.xlsx");
+});
+
+// ── Bitácora de Unidades ──────────────────────────────────────
+app.MapPost("/api/bitacora/crear", async (HttpContext ctx, AppDbContext db, CurrentUser cu) =>
+{
+    if (!Permisos.PuedeCrearBitacora(cu.User!.Rol))
+        return Results.Forbid();
+
+    var f = await ctx.Request.ReadFormAsync();
+    var fecha = DateOnly.Parse(f["fecha"].ToString());
+    var horario = f["horario"].ToString().Trim();
+
+    var unidad = new UnidadAcceso
+    {
+        TenantId     = cu.User.TenantId,
+        Fecha        = fecha,
+        Horario      = horario,
+        ResponsableMkt      = f["responsableMkt"].ToString().Trim(),
+        Origen              = f["origen"].ToString().Trim(),
+        Destino             = f["destino"].ToString().Trim(),
+        LineaTransportista  = f["lineaTransportista"].ToString().Trim(),
+        NombreOperador      = f["nombreOperador"].ToString().Trim(),
+        Placas              = f["placas"].ToString().Trim(),
+        NumeroCaja          = f["numeroCaja"].ToString().Trim(),
+        TelefonoOperador    = f["telefonoOperador"].ToString().Trim(),
+        TipoMovimiento      = Enum.Parse<TipoMovimientoUnidad>(f["tipoMovimiento"].ToString()),
+        CreadoPor           = cu.User.Username,
+        CreadoEn            = DateTime.UtcNow,
+    };
+
+    bool conflicto = await db.UnidadAccesos
+        .AnyAsync(u => u.Fecha == fecha && u.Horario == horario);
+
+    db.UnidadAccesos.Add(unidad);
+    await db.SaveChangesAsync();
+
+    var dest = $"/bitacora?fecha={fecha:yyyy-MM-dd}";
+    if (conflicto) dest += "&warn=conflicto";
+    return Results.Redirect(dest);
+});
+
+app.MapPost("/api/bitacora/actualizar/{id:int}", async (int id, HttpContext ctx, AppDbContext db, CurrentUser cu) =>
+{
+    if (!Permisos.PuedeCompletarBitacora(cu.User!.Rol))
+        return Results.Forbid();
+
+    var f = await ctx.Request.ReadFormAsync();
+    var unidad = await db.UnidadAccesos.FindAsync(id);
+    if (unidad is null) return Results.NotFound();
+
+    unidad.Estatus       = Enum.Parse<EstadoUnidad>(f["estatus"].ToString());
+    unidad.PersonaAcceso = f["personaAcceso"].ToString().Trim().NullIfEmpty();
+    unidad.HoraIngreso   = TimeOnly.TryParse(f["horaIngreso"].ToString(), out var hi) ? hi : null;
+    unidad.HoraSalida    = TimeOnly.TryParse(f["horaSalida"].ToString(), out var hs) ? hs : null;
+    unidad.Comentario    = f["comentario"].ToString().Trim().NullIfEmpty();
+    unidad.ActualizadoPor = cu.User.Username;
+    unidad.ActualizadoEn  = DateTime.UtcNow;
+
+    await db.SaveChangesAsync();
+
+    var fecha = unidad.Fecha.ToString("yyyy-MM-dd");
+    return Results.Redirect($"/bitacora?fecha={fecha}");
 });
 
 app.MapRazorComponents<JeDax.Components.App>().DisableAntiforgery();
