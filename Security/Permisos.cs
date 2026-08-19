@@ -45,4 +45,12 @@ public static class Permisos
         rol == RolUsuario.Admin;
 
     public static bool PuedeMoverInventario(RolUsuario _) => true;
+
+    public static bool PuedeCrearBitacora(RolUsuario rol) =>
+        rol is RolUsuario.Admin or RolUsuario.Mkt;
+
+    public static bool PuedeCompletarBitacora(RolUsuario rol) =>
+        rol is RolUsuario.Admin or RolUsuario.Mlx;
+
+    public static bool PuedeVerBitacora(RolUsuario _) => true;
 }
