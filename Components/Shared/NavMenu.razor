@@ -26,6 +26,10 @@
             <a href="/vales" class="nav-link"><Icon Name="vales" Size="16" /><span>Vales</span></a>
         }
         <a href="/historial" class="nav-link"><Icon Name="historial" Size="16" /><span>Historial</span></a>
+        @if (Permisos.PuedeVerBitacora(Current.User.Rol))
+        {
+            <a href="/bitacora" class="nav-link"><Icon Name="truck" Size="16" /><span>Bitácora</span></a>
+        }
         @if (Permisos.PuedeAccederCaseGenerador(Current.User.Rol))
         {
             <a href="/case-generador" class="nav-link"><Icon Name="case-gen" Size="16" /><span>CASE Gen</span></a>
