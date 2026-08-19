@@ -94,6 +94,7 @@ var app = builder.Build();
                 ""CreadoEn"" timestamp with time zone NOT NULL,
                 ""ActualizadoPor"" text,
                 ""ActualizadoEn"" timestamp with time zone,
+                CONSTRAINT ""FK_UnidadAccesos_Tenants_TenantId"" FOREIGN KEY (""TenantId"") REFERENCES ""Tenants""(""Id"") ON DELETE CASCADE,
                 CONSTRAINT ""PK_UnidadAccesos"" PRIMARY KEY (""Id"")
             )
         ");

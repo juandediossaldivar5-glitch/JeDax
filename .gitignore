@@ -10,3 +10,4 @@ appsettings.*.json
 !appsettings.Production.json
 Properties/launchSettings.json
 .gstack/
+**/.DS_Store
