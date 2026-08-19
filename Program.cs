@@ -69,6 +69,34 @@ var app = builder.Build();
 
         if (needsReset) await db.Database.EnsureDeletedAsync();
         await db.Database.EnsureCreatedAsync();
+
+        await db.Database.ExecuteSqlRawAsync(@"
+            CREATE TABLE IF NOT EXISTS ""UnidadAccesos"" (
+                ""Id"" serial NOT NULL,
+                ""TenantId"" integer NOT NULL,
+                ""Fecha"" date NOT NULL,
+                ""Horario"" text NOT NULL,
+                ""ResponsableMkt"" text NOT NULL,
+                ""Origen"" text NOT NULL,
+                ""Destino"" text NOT NULL,
+                ""LineaTransportista"" text NOT NULL,
+                ""NombreOperador"" text NOT NULL,
+                ""Placas"" text NOT NULL,
+                ""NumeroCaja"" text NOT NULL,
+                ""TelefonoOperador"" text NOT NULL,
+                ""TipoMovimiento"" integer NOT NULL,
+                ""Estatus"" integer NOT NULL DEFAULT 0,
+                ""PersonaAcceso"" text,
+                ""HoraIngreso"" time,
+                ""HoraSalida"" time,
+                ""Comentario"" text,
+                ""CreadoPor"" text NOT NULL,
+                ""CreadoEn"" timestamp with time zone NOT NULL,
+                ""ActualizadoPor"" text,
+                ""ActualizadoEn"" timestamp with time zone,
+                CONSTRAINT ""PK_UnidadAccesos"" PRIMARY KEY (""Id"")
+            )
+        ");
     }
     else
     {

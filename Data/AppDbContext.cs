@@ -22,6 +22,7 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
     public DbSet<Vale> Vales => Set<Vale>();
     public DbSet<ValeDetalle> ValeDetalles => Set<ValeDetalle>();
     public DbSet<MovimientoHistorico> Movimientos => Set<MovimientoHistorico>();
+    public DbSet<UnidadAcceso> UnidadAccesos => Set<UnidadAcceso>();
 
     protected override void OnModelCreating(ModelBuilder mb)
     {
@@ -78,6 +79,13 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
         mb.Entity<MovimientoHistorico>(e =>
         {
             e.HasQueryFilter(m => m.TenantId == _tenant.TenantId);
+        });
+
+        // ── UnidadAcceso ──────────────────────────────────────────
+        mb.Entity<UnidadAcceso>(e =>
+        {
+            e.HasQueryFilter(u => u.TenantId == _tenant.TenantId);
+            e.HasIndex(u => new { u.TenantId, u.Fecha });
         });
     }
 }
