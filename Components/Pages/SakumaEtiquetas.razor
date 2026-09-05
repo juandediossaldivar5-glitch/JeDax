@@ -1,0 +1,105 @@
+@page "/sakuma-etiquetas"
+@using JeDax.Components.Shared
+@inject ValeService ValesSvc
+
+@if (_detalles.Count == 0)
+{
+    <div class="empty-state">
+        <Icon Name="empty-box" Size="80" />
+        <h3>Sin etiquetas</h3>
+        <p>No se encontraron CASEs para esta referencia.</p>
+        <a href="/vales" class="btn-primary">Ir a Vales</a>
+    </div>
+}
+else
+{
+    <div class="no-print" style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap">
+        <h1 style="margin:0"><Icon Name="box" Size="28" /> Etiquetas — @Ref</h1>
+        <span style="color:var(--muted)">@_detalles.Count etiquetas</span>
+        <button onclick="window.print()" class="btn-primary" style="margin-left:auto">
+            <Icon Name="download" Size="16" /> Imprimir
+        </button>
+        <a href="/vales" class="btn-outline no-print">Ir a Vales</a>
+    </div>
+
+    <div class="label-grid">
+        @foreach (var d in _detalles)
+        {
+            <div class="label-card">
+                <div class="label-barcode">*@d.CaseCode*</div>
+                <div class="label-code">@d.CaseCode</div>
+                @if (!string.IsNullOrEmpty(d.Item))
+                {
+                    <div class="label-meta">@d.Item</div>
+                }
+                @if (!string.IsNullOrEmpty(d.Descripcion))
+                {
+                    <div class="label-meta">@d.Descripcion</div>
+                }
+                <div class="label-meta">@d.Qty PCS</div>
+            </div>
+        }
+    </div>
+}
+
+<style>
+    .label-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 1rem;
+    }
+
+    .label-card {
+        border: 2px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        text-align: center;
+        background: var(--card);
+        break-inside: avoid;
+    }
+
+    .label-barcode {
+        font-family: 'Courier New', monospace;
+        font-size: 1.1rem;
+        font-weight: bold;
+        letter-spacing: 2px;
+        margin-bottom: .25rem;
+        color: var(--text);
+    }
+
+    .label-code {
+        font-family: 'Courier New', monospace;
+        font-size: .85rem;
+        color: var(--muted);
+        margin-bottom: .5rem;
+    }
+
+    .label-meta {
+        font-size: .78rem;
+        color: var(--muted);
+        line-height: 1.4;
+    }
+
+    @@media print {
+        .no-print { display: none !important; }
+        body { background: white !important; }
+        .label-card { border: 1px solid #ccc; background: white; color: black; }
+        .label-barcode { color: black; }
+        .label-code { color: #555; }
+        .label-meta { color: #555; }
+        .label-grid { gap: .5rem; }
+    }
+</style>
+
+@code {
+    [SupplyParameterFromQuery] public string? Ref { get; set; }
+
+    List<JeDax.Models.ValeDetalle> _detalles = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (string.IsNullOrEmpty(Ref)) return;
+        var vale = await ValesSvc.ObtenerPorReferenciaAsync(Ref);
+        _detalles = vale?.Detalles.ToList() ?? [];
+    }
+}

@@ -345,7 +345,7 @@ app.MapPost("/api/sakuma/confirmar", async (HttpContext ctx, SakumaImportService
     {
         await svc.ConfirmarImportAsync(invoiceNo, lineas, cu.User!.Username);
         ctx.Response.Cookies.Delete("sakuma_preview");
-        return Results.Redirect($"/vales?ok=sakuma&ref={Uri.EscapeDataString(invoiceNo)}");
+        return Results.Redirect($"/sakuma-etiquetas?ref={Uri.EscapeDataString(invoiceNo)}");
     }
     catch (Exception ex)
     {
