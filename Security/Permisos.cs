@@ -32,6 +32,9 @@ public static class Permisos
     public static bool PuedeImportarValesSalida(RolUsuario rol) =>
         rol is RolUsuario.Admin or RolUsuario.Mkt;
 
+    public static bool PuedeImportarSakuma(RolUsuario rol) =>
+        rol is RolUsuario.Admin or RolUsuario.Mlx;
+
     public static bool PuedeVerImportarVales(RolUsuario rol) =>
         rol is RolUsuario.Admin or RolUsuario.Mkt or RolUsuario.Mlx;
 

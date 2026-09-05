@@ -43,6 +43,7 @@ builder.Services.AddScoped<UsuarioService>();
 builder.Services.AddScoped<CaseGeneradorService>();
 builder.Services.AddScoped<UserSession>();
 builder.Services.AddScoped<ValeImportService>();
+builder.Services.AddScoped<SakumaImportService>();
 builder.Services.AddScoped<CurrentUser>();
 
 var app = builder.Build();
@@ -266,6 +267,89 @@ app.MapPost("/api/vales/importar", async (HttpContext ctx, ValeImportService imp
     {
         return Results.Redirect($"/vales?error={Uri.EscapeDataString(ex.Message)}");
     }
+});
+
+// ── SAKUMA PDF Import ─────────────────────────────────────────
+app.MapPost("/api/sakuma/upload", async (HttpContext ctx, SakumaImportService svc, CurrentUser cu) =>
+{
+    var f = await ctx.Request.ReadFormAsync();
+    var file = f.Files.GetFile("archivo");
+    if (file is null) return Results.Redirect("/sakuma-import?error=Sin+archivo");
+
+    SakumaParseResult parsed;
+    try
+    {
+        using var s = file.OpenReadStream();
+        parsed = await svc.ParsearPdfAsync(s);
+    }
+    catch (Exception ex)
+    {
+        return Results.Redirect($"/sakuma-import?error={Uri.EscapeDataString(ex.Message)}");
+    }
+
+    if (!parsed.Exito)
+    {
+        var err = string.Join("; ", parsed.Errores);
+        return Results.Redirect($"/sakuma-import?error={Uri.EscapeDataString(err)}");
+    }
+
+    int siguiente = await svc.ObtenerSiguienteCaseNoAsync();
+    var lineas = parsed.Lineas.Select((l, i) => new
+    {
+        caseCode = $"CASE{siguiente + i:D8}",
+        l.Item,
+        l.Descripcion,
+        l.Qty
+    }).ToList();
+
+    var preview = System.Text.Json.JsonSerializer.Serialize(new
+    {
+        invoiceNo = parsed.InvoiceNo,
+        lineas
+    });
+
+    ctx.Response.Cookies.Append("sakuma_preview", preview, new CookieOptions
+    {
+        HttpOnly = true,
+        SameSite = SameSiteMode.Lax,
+        Secure = ctx.Request.IsHttps,
+        Expires = DateTimeOffset.UtcNow.AddMinutes(10)
+    });
+
+    return Results.Redirect("/sakuma-preview");
+});
+
+app.MapPost("/api/sakuma/confirmar", async (HttpContext ctx, SakumaImportService svc, CurrentUser cu) =>
+{
+    var f = await ctx.Request.ReadFormAsync();
+    var invoiceNo = f["invoiceNo"].ToString();
+    var caseCodes = f["caseCode"].ToArray();
+    var items = f["item"].ToArray();
+    var descripciones = f["descripcion"].ToArray();
+    var qtys = f["qty"].ToArray();
+
+    if (caseCodes.Length == 0 || string.IsNullOrWhiteSpace(invoiceNo))
+        return Results.Redirect("/sakuma-import?error=Datos+incompletos");
+
+    var lineas = caseCodes.Select((code, i) => new SakumaConfirmaLinea(
+        code, items[i] ?? "", descripciones[i] ?? "", int.Parse(qtys[i] ?? "0"))).ToList();
+
+    try
+    {
+        await svc.ConfirmarImportAsync(invoiceNo, lineas, cu.User!.Username);
+        ctx.Response.Cookies.Delete("sakuma_preview");
+        return Results.Redirect($"/vales?ok=sakuma&ref={Uri.EscapeDataString(invoiceNo)}");
+    }
+    catch (Exception ex)
+    {
+        return Results.Redirect($"/sakuma-preview?error={Uri.EscapeDataString(ex.Message)}");
+    }
+});
+
+app.MapGet("/api/sakuma/cancelar", (HttpContext ctx) =>
+{
+    ctx.Response.Cookies.Delete("sakuma_preview");
+    return Results.Redirect("/sakuma-import");
 });
 
 // ── Admin ──────────────────────────────────────────────────────
