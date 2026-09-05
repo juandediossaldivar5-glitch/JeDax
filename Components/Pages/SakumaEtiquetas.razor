@@ -14,7 +14,7 @@
 }
 else
 {
-    <div class="no-print toolbar-print">
+    <div class="no-print toolbar-et">
         <span><strong>@Ref</strong> — @_detalles.Count etiquetas</span>
         <button onclick="window.print()" class="btn-primary"><Icon Name="download" Size="16" /> Imprimir</button>
         <a href="/vales" class="btn-outline">Ir a Vales</a>
@@ -22,27 +22,54 @@ else
 
     @foreach (var d in _detalles)
     {
-        <div class="etiqueta-page">
-            <div class="etiqueta-ref">@Ref</div>
-            <img class="etiqueta-qr"
-                 src="data:image/png;base64,@QrHelper.ToBase64Png(d.CaseCode)"
-                 alt="QR @d.CaseCode" />
-            <div class="etiqueta-code">@d.CaseCode</div>
-            @if (!string.IsNullOrEmpty(d.Item))
-            {
-                <div class="etiqueta-meta">@d.Item</div>
-            }
-            @if (!string.IsNullOrEmpty(d.Descripcion))
-            {
-                <div class="etiqueta-meta">@d.Descripcion</div>
-            }
-            <div class="etiqueta-meta">@d.Qty PCS</div>
+        <div class="et-page">
+
+            <!-- QR + código legible (reemplaza barcode rows 1-2) -->
+            <div class="et-qr-row">
+                <img class="et-qr"
+                     src="data:image/png;base64,@QrHelper.ToBase64Png(d.CaseCode, 6)"
+                     alt="QR @d.CaseCode" />
+                <div class="et-qr-text">@d.CaseCode</div>
+            </div>
+
+            <!-- CASE number principal (rows 4-7: 95pt, bordered) -->
+            <div class="et-case-box">@d.CaseCode</div>
+
+            <!-- Labels row 9 -->
+            <div class="et-labels-row">
+                <span>ITEM NO.</span>
+                <span>QTY</span>
+            </div>
+
+            <!-- Item + QTY boxes (rows 10-12) -->
+            <div class="et-data-row">
+                <div class="et-item-box">@(d.Item ?? "")</div>
+                <div class="et-qty-box">@d.Qty</div>
+            </div>
+
+            <!-- DESCRIPCIÓN label (row 13) -->
+            <div class="et-section-label">DESCRIPCIÓN</div>
+
+            <!-- Description box (rows 14-16) -->
+            <div class="et-desc-box">@(d.Descripcion ?? "")</div>
+
+            <!-- IN DATE label (row 17) -->
+            <div class="et-section-label">IN DATE</div>
+
+            <!-- Date box (rows 18-20, left column only) -->
+            <div class="et-date-row">
+                <div class="et-date-box">
+                    @((d.FechaProcesado ?? DateTime.UtcNow).ToString("yyyy-MM-dd"))
+                </div>
+            </div>
+
         </div>
     }
 }
 
 <style>
-    .toolbar-print {
+    /* ── Toolbar (solo pantalla) ─────────────────────────── */
+    .toolbar-et {
         display: flex;
         align-items: center;
         gap: 1rem;
@@ -50,59 +77,142 @@ else
         flex-wrap: wrap;
     }
 
-    .etiqueta-page {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        min-height: 80vh;
-        padding: 2rem;
-        text-align: center;
+    /* ── Página de etiqueta ──────────────────────────────── */
+    .et-page {
+        width: 100%;
+        max-width: 900px;
+        margin: 0 auto 3rem;
+        font-family: Calibri, 'Segoe UI', Arial, sans-serif;
+        color: #000;
+        background: white;
+        padding: 1.5rem 1.5rem 1rem;
         break-after: page;
         page-break-after: always;
     }
 
-    .etiqueta-ref {
-        font-size: .85rem;
-        color: var(--muted);
-        margin-bottom: 1.5rem;
+    /* QR + código legible */
+    .et-qr-row {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        margin-bottom: .5rem;
+    }
+
+    .et-qr {
+        width: 140px;
+        height: 140px;
+        image-rendering: pixelated;
+    }
+
+    .et-qr-text {
+        font-size: 10pt;
+        margin-top: .2rem;
+        letter-spacing: .03em;
+    }
+
+    /* CASE number grande (rows 4-7) */
+    .et-case-box {
+        border: 2.5px solid #000;
+        text-align: center;
+        font-size: clamp(2.5rem, 6vw, 4.8rem);
+        font-weight: bold;
+        padding: .6rem .5rem;
+        margin-bottom: .6rem;
+        line-height: 1.1;
         letter-spacing: .05em;
     }
 
-    .etiqueta-qr {
-        width: 260px;
-        height: 260px;
-        image-rendering: pixelated;
-        margin-bottom: 1.5rem;
-    }
-
-    .etiqueta-code {
-        font-family: 'Courier New', monospace;
-        font-size: 1.4rem;
+    /* Labels row */
+    .et-labels-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 14pt;
         font-weight: bold;
-        letter-spacing: .1em;
-        margin-bottom: .75rem;
-        color: var(--text);
+        margin-bottom: .2rem;
+        padding: 0 .1rem;
     }
 
-    .etiqueta-meta {
-        font-size: .95rem;
-        color: var(--muted);
-        line-height: 1.6;
+    /* Item + QTY lado a lado */
+    .et-data-row {
+        display: flex;
+        gap: .6rem;
+        margin-bottom: .4rem;
     }
 
+    .et-item-box {
+        flex: 5;
+        border: 2.5px solid #000;
+        min-height: 60px;
+        padding: .5rem .6rem;
+        font-size: 14pt;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+    }
+
+    .et-qty-box {
+        flex: 2;
+        border: 2.5px solid #000;
+        min-height: 60px;
+        padding: .5rem .6rem;
+        font-size: 14pt;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Section labels */
+    .et-section-label {
+        font-size: 14pt;
+        font-weight: bold;
+        margin-bottom: .2rem;
+        margin-top: .4rem;
+    }
+
+    /* Description box */
+    .et-desc-box {
+        border: 2.5px solid #000;
+        min-height: 60px;
+        padding: .5rem .6rem;
+        font-size: 13pt;
+        margin-bottom: .4rem;
+        display: flex;
+        align-items: center;
+    }
+
+    /* Date row: solo columna izquierda (~25%) */
+    .et-date-row {
+        display: flex;
+    }
+
+    .et-date-box {
+        width: 28%;
+        border: 2.5px solid #000;
+        min-height: 60px;
+        padding: .5rem .6rem;
+        font-size: 13pt;
+        display: flex;
+        align-items: center;
+    }
+
+    /* ── Impresión ───────────────────────────────────────── */
     @@media print {
+        @@page { size: landscape; margin: .5in .25in; }
+
         .no-print { display: none !important; }
 
-        .etiqueta-page {
-            min-height: 100vh;
-            padding: 1rem;
+        .et-page {
+            max-width: 100%;
+            margin: 0;
+            padding: 0;
             background: white;
+            color: black;
         }
 
-        .etiqueta-ref { color: #555; }
-        .etiqueta-code { color: black; }
-        .etiqueta-meta { color: #444; }
+        .et-case-box {
+            font-size: 5.5rem;
+        }
     }
 </style>
 
