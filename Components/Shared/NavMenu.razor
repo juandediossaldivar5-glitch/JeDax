@@ -25,6 +25,10 @@
         {
             <a href="/vales" class="nav-link"><Icon Name="vales" Size="16" /><span>Vales</span></a>
         }
+        @if (Permisos.PuedeImportarSakuma(Current.User.Rol))
+        {
+            <a href="/sakuma-import" class="nav-link"><Icon Name="upload" Size="16" /><span>SAKUMA</span></a>
+        }
         <a href="/historial" class="nav-link"><Icon Name="historial" Size="16" /><span>Historial</span></a>
         @if (Permisos.PuedeAccederCaseGenerador(Current.User.Rol))
         {
