@@ -1,0 +1,22 @@
+@page "/sakuma-import"
+@using JeDax.Components.Shared
+
+<h1><Icon Name="upload" Size="32" /> Importar SAKUMA</h1>
+<p style="color:var(--muted);margin-bottom:2rem;max-width:600px">
+    Sube el packing list PDF de SAKUMA. El sistema generará el Vale de Entrada y los CASEs automáticamente.
+</p>
+
+@if (!string.IsNullOrEmpty(Error))
+{
+    <div class="alert-error"><Icon Name="info" Size="18" /> @Error</div>
+}
+
+<form method="post" action="/api/sakuma/upload" enctype="multipart/form-data" class="form-section">
+    <label><Icon Name="upload" Size="12" /> Archivo PDF (packing list SAKUMA)</label>
+    <input type="file" name="archivo" accept=".pdf" required class="input" />
+    <button type="submit" class="btn-primary"><Icon Name="check" Size="16" /> Analizar PDF</button>
+</form>
+
+@code {
+    [SupplyParameterFromQuery] public string? Error { get; set; }
+}

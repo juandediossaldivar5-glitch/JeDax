@@ -1,0 +1,92 @@
+@page "/sakuma-preview"
+@using System.Text.Json
+@using JeDax.Components.Shared
+@inject IHttpContextAccessor HttpCtx
+
+@{
+    var previewJson = HttpCtx.HttpContext?.Request.Cookies["sakuma_preview"];
+    PreviewData? data = null;
+    if (!string.IsNullOrEmpty(previewJson))
+    {
+        try { data = JsonSerializer.Deserialize<PreviewData>(previewJson, JsonOpts); } catch { }
+    }
+}
+
+<h1><Icon Name="vales" Size="32" /> Confirmar importación SAKUMA</h1>
+<p style="color:var(--muted);margin-bottom:2rem;max-width:600px">
+    Verifica los CASEs antes de confirmar. Se creará un Vale de Entrada cerrado y los CASEs quedarán en inventario como <span class="badge badge-recibido">Recibido</span>.
+</p>
+
+@if (!string.IsNullOrEmpty(Error))
+{
+    <div class="alert-error"><Icon Name="info" Size="18" /> @Error</div>
+}
+
+@if (data is null)
+{
+    <div class="empty-state">
+        <Icon Name="empty-box" Size="80" />
+        <h3>Sin datos de importación</h3>
+        <p>No hay una importación pendiente de confirmar.</p>
+        <a href="/sakuma-import" class="btn-primary"><Icon Name="upload" Size="14" /> Subir PDF</a>
+    </div>
+}
+else
+{
+    <div class="card" style="margin-bottom:1.5rem;display:flex;gap:2rem;align-items:center;flex-wrap:wrap">
+        <span><span style="color:var(--muted)">Invoice No.</span> <strong>@data.InvoiceNo</strong></span>
+        <span><span style="color:var(--muted)">Cajas</span> <strong>@data.Lineas.Count</strong></span>
+        <span><span style="color:var(--muted)">Total PCS</span> <strong>@data.Lineas.Sum(l => l.Qty)</strong></span>
+    </div>
+
+    <div class="table-wrapper" style="margin-bottom:2rem;overflow-x:auto">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>CASE JeDax</th>
+                    <th>Item</th>
+                    <th>Descripción</th>
+                    <th style="text-align:right">PCS</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var l in data.Lineas)
+                {
+                    <tr>
+                        <td><code>@l.CaseCode</code></td>
+                        <td>@l.Item</td>
+                        <td style="font-size:.85rem;max-width:320px">@l.Descripcion</td>
+                        <td style="text-align:right">@l.Qty</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <form method="post" action="/api/sakuma/confirmar">
+        <input type="hidden" name="invoiceNo" value="@data.InvoiceNo" />
+        @foreach (var l in data.Lineas)
+        {
+            <input type="hidden" name="caseCode" value="@l.CaseCode" />
+            <input type="hidden" name="item" value="@l.Item" />
+            <input type="hidden" name="descripcion" value="@l.Descripcion" />
+            <input type="hidden" name="qty" value="@l.Qty" />
+        }
+        <div style="display:flex;gap:1rem;flex-wrap:wrap">
+            <button type="submit" class="btn-primary">
+                <Icon Name="check" Size="16" /> Confirmar e importar (@data.Lineas.Count CASEs)
+            </button>
+            <a href="/api/sakuma/cancelar" class="btn-outline">Cancelar</a>
+        </div>
+    </form>
+}
+
+@code {
+    [SupplyParameterFromQuery] public string? Error { get; set; }
+
+    private static readonly JsonSerializerOptions JsonOpts =
+        new() { PropertyNameCaseInsensitive = true };
+
+    private record PreviewLinea(string CaseCode, string Item, string Descripcion, int Qty);
+    private record PreviewData(string InvoiceNo, List<PreviewLinea> Lineas);
+}
