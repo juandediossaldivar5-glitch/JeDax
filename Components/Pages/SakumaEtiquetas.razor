@@ -3,16 +3,6 @@
 @using JeDax.Helpers
 @inject ValeService ValesSvc
 
-@{
-    var printTime = DateTime.Now.ToString("dd/MM/yyyy HH:mm");
-}
-
-<!-- Header visible solo al imprimir: JeDax + hora -->
-<div class="et-print-header">
-    <strong>JeDax</strong>
-    <span>@printTime</span>
-</div>
-
 @if (_detalles.Count == 0)
 {
     <div class="empty-state">
@@ -34,7 +24,10 @@ else
     {
         <div class="et-page">
 
-            <!-- QR + código legible (reemplaza barcode rows 1-2) -->
+            <!-- Marca de agua "JeDax" — tenue, detrás del contenido -->
+            <div class="et-watermark" aria-hidden="true">JeDax</div>
+
+            <!-- QR + código legible -->
             <div class="et-qr-row">
                 <img class="et-qr"
                      src="data:image/png;base64,@QrHelper.ToBase64Png(d.CaseCode, 6)"
@@ -42,31 +35,27 @@ else
                 <div class="et-qr-text">@d.CaseCode</div>
             </div>
 
-            <!-- CASE number principal (rows 4-7: 95pt, bordered) -->
+            <!-- CASE number principal -->
             <div class="et-case-box">@d.CaseCode</div>
 
-            <!-- Labels row 9 -->
+            <!-- Labels -->
             <div class="et-labels-row">
                 <span>ITEM NO.</span>
                 <span>QTY</span>
             </div>
 
-            <!-- Item + QTY boxes (rows 10-12) -->
+            <!-- Item + QTY -->
             <div class="et-data-row">
                 <div class="et-item-box">@(d.Item ?? "")</div>
                 <div class="et-qty-box">@d.Qty</div>
             </div>
 
-            <!-- DESCRIPCIÓN label (row 13) -->
+            <!-- DESCRIPCIÓN -->
             <div class="et-section-label">DESCRIPCIÓN</div>
-
-            <!-- Description box (rows 14-16) -->
             <div class="et-desc-box">@(d.Descripcion ?? "")</div>
 
-            <!-- IN DATE label (row 17) -->
+            <!-- IN DATE -->
             <div class="et-section-label">IN DATE</div>
-
-            <!-- Date box (rows 18-20, left column only) -->
             <div class="et-date-row">
                 <div class="et-date-box">
                     @((d.FechaProcesado ?? DateTime.UtcNow).ToString("yyyy-MM-dd"))
@@ -89,15 +78,45 @@ else
 
     /* ── Página de etiqueta ──────────────────────────────── */
     .et-page {
+        position: relative;
         width: 100%;
         max-width: 900px;
         margin: 0 auto 3rem;
         font-family: Calibri, 'Segoe UI', Arial, sans-serif;
         color: #000;
         background: white;
-        padding: 1.5rem 1.5rem 1rem;
+        padding: 1.2rem 1.5rem .8rem;
         break-after: page;
         page-break-after: always;
+    }
+
+    /* Marca de agua: oculta en pantalla, visible al imprimir */
+    .et-watermark {
+        display: none;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) rotate(-35deg);
+        font-size: 9rem;
+        font-weight: 900;
+        color: rgba(0, 0, 0, 0.045);
+        pointer-events: none;
+        user-select: none;
+        white-space: nowrap;
+        z-index: 0;
+        font-family: Calibri, Arial, sans-serif;
+    }
+
+    /* Todo el contenido de la etiqueta encima de la marca */
+    .et-qr-row,
+    .et-case-box,
+    .et-labels-row,
+    .et-data-row,
+    .et-section-label,
+    .et-desc-box,
+    .et-date-row {
+        position: relative;
+        z-index: 1;
     }
 
     /* QR + código legible */
@@ -105,29 +124,29 @@ else
         display: flex;
         flex-direction: column;
         align-items: flex-start;
-        margin-bottom: .5rem;
+        margin-bottom: .4rem;
     }
 
     .et-qr {
-        width: 140px;
-        height: 140px;
+        width: 130px;
+        height: 130px;
         image-rendering: pixelated;
     }
 
     .et-qr-text {
         font-size: 10pt;
-        margin-top: .2rem;
+        margin-top: .15rem;
         letter-spacing: .03em;
     }
 
-    /* CASE number grande (rows 4-7) */
+    /* CASE number grande */
     .et-case-box {
         border: 2.5px solid #000;
         text-align: center;
         font-size: clamp(2.5rem, 6vw, 4.8rem);
         font-weight: bold;
-        padding: .6rem .5rem;
-        margin-bottom: .6rem;
+        padding: .5rem;
+        margin-bottom: .5rem;
         line-height: 1.1;
         letter-spacing: .05em;
     }
@@ -136,25 +155,25 @@ else
     .et-labels-row {
         display: flex;
         justify-content: space-between;
-        font-size: 14pt;
+        font-size: 16pt;
         font-weight: bold;
         margin-bottom: .2rem;
         padding: 0 .1rem;
     }
 
-    /* Item + QTY lado a lado */
+    /* Item + QTY */
     .et-data-row {
         display: flex;
         gap: .6rem;
-        margin-bottom: .4rem;
+        margin-bottom: .35rem;
     }
 
     .et-item-box {
         flex: 5;
         border: 2.5px solid #000;
-        min-height: 60px;
-        padding: .5rem .6rem;
-        font-size: 14pt;
+        min-height: 72px;
+        padding: .6rem .8rem;
+        font-size: 22pt;
         font-weight: bold;
         display: flex;
         align-items: center;
@@ -163,9 +182,9 @@ else
     .et-qty-box {
         flex: 2;
         border: 2.5px solid #000;
-        min-height: 60px;
-        padding: .5rem .6rem;
-        font-size: 14pt;
+        min-height: 72px;
+        padding: .6rem .8rem;
+        font-size: 22pt;
         font-weight: bold;
         display: flex;
         align-items: center;
@@ -174,24 +193,25 @@ else
 
     /* Section labels */
     .et-section-label {
-        font-size: 14pt;
+        font-size: 16pt;
         font-weight: bold;
-        margin-bottom: .2rem;
-        margin-top: .4rem;
+        margin-bottom: .15rem;
+        margin-top: .35rem;
     }
 
     /* Description box */
     .et-desc-box {
         border: 2.5px solid #000;
-        min-height: 60px;
-        padding: .5rem .6rem;
-        font-size: 13pt;
-        margin-bottom: .4rem;
+        min-height: 72px;
+        padding: .6rem .8rem;
+        font-size: 22pt;
+        font-weight: bold;
+        margin-bottom: .35rem;
         display: flex;
         align-items: center;
     }
 
-    /* Date row: solo columna izquierda (~25%) */
+    /* Date box: solo columna izquierda */
     .et-date-row {
         display: flex;
     }
@@ -199,51 +219,39 @@ else
     .et-date-box {
         width: 28%;
         border: 2.5px solid #000;
-        min-height: 60px;
-        padding: .5rem .6rem;
-        font-size: 13pt;
+        min-height: 72px;
+        padding: .6rem .8rem;
+        font-size: 18pt;
+        font-weight: bold;
         display: flex;
         align-items: center;
     }
 
-    /* ── Header de impresión (oculto en pantalla) ────────── */
-    .et-print-header {
-        display: none;
-    }
-
     /* ── Impresión ───────────────────────────────────────── */
     @@media print {
-        /* Paginación y header/footer CSS */
         @@page {
             size: landscape;
-            margin: .9in .25in .6in;
+            margin: .35in .25in .5in;
         }
 
-        /* Contador de hojas en margen inferior derecho */
+        /* Contador de hojas */
         @@page {
             @@bottom-right {
                 content: "Hoja " counter(page) " / " counter(pages);
                 font-family: Calibri, Arial, sans-serif;
                 font-size: 9pt;
-                color: #555;
+                color: #777;
             }
         }
 
-        /* Header fijo: JeDax + hora en todas las hojas */
-        .et-print-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            padding: 4px 8px;
-            border-bottom: 1px solid #aaa;
-            font-family: Calibri, Arial, sans-serif;
-            font-size: 10pt;
-            background: white;
-            z-index: 9999;
+        /* Hora en esquina inferior izquierda */
+        @@page {
+            @@bottom-left {
+                content: string(print-time);
+                font-family: Calibri, Arial, sans-serif;
+                font-size: 9pt;
+                color: #777;
+            }
         }
 
         /* Ocultar nav y toolbar */
@@ -251,17 +259,18 @@ else
         .navbar,
         .toolbar-et { display: none !important; }
 
+        /* Activar marca de agua */
+        .et-watermark { display: block; }
+
         .et-page {
             max-width: 100%;
             margin: 0;
-            padding: 0;
+            padding: .2rem .3rem;
             background: white;
             color: black;
         }
 
-        .et-case-box {
-            font-size: 5.5rem;
-        }
+        .et-case-box { font-size: 5.5rem; }
     }
 </style>
 
