@@ -3,6 +3,16 @@
 @using JeDax.Helpers
 @inject ValeService ValesSvc
 
+@{
+    var printTime = DateTime.Now.ToString("dd/MM/yyyy HH:mm");
+}
+
+<!-- Header visible solo al imprimir: JeDax + hora -->
+<div class="et-print-header">
+    <strong>JeDax</strong>
+    <span>@printTime</span>
+</div>
+
 @if (_detalles.Count == 0)
 {
     <div class="empty-state">
@@ -196,11 +206,50 @@ else
         align-items: center;
     }
 
+    /* ── Header de impresión (oculto en pantalla) ────────── */
+    .et-print-header {
+        display: none;
+    }
+
     /* ── Impresión ───────────────────────────────────────── */
     @@media print {
-        @@page { size: landscape; margin: .5in .25in; }
+        /* Paginación y header/footer CSS */
+        @@page {
+            size: landscape;
+            margin: .9in .25in .6in;
+        }
 
-        .no-print { display: none !important; }
+        /* Contador de hojas en margen inferior derecho */
+        @@page {
+            @@bottom-right {
+                content: "Hoja " counter(page) " / " counter(pages);
+                font-family: Calibri, Arial, sans-serif;
+                font-size: 9pt;
+                color: #555;
+            }
+        }
+
+        /* Header fijo: JeDax + hora en todas las hojas */
+        .et-print-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 4px 8px;
+            border-bottom: 1px solid #aaa;
+            font-family: Calibri, Arial, sans-serif;
+            font-size: 10pt;
+            background: white;
+            z-index: 9999;
+        }
+
+        /* Ocultar nav y toolbar */
+        .no-print,
+        .navbar,
+        .toolbar-et { display: none !important; }
 
         .et-page {
             max-width: 100%;
