@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.RegularExpressions;
+using ClosedXML.Excel;
 using JeDax.Data;
 using JeDax.Models;
 using Microsoft.EntityFrameworkCore;
@@ -7,7 +8,9 @@ using UglyToad.PdfPig;
 
 namespace JeDax.Services;
 
-public record SakumaLinea(int SakumaCaseNo, string Item, string OrderNo, string Descripcion, int Qty);
+// ProposedCaseCode: null en PDF (se asigna secuencial desde DB), valor en Excel (BoxNo-LotNo)
+public record SakumaLinea(int SakumaCaseNo, string Item, string OrderNo, string Descripcion, int Qty,
+    string? ProposedCaseCode = null);
 public record SakumaConfirmaLinea(string CaseCode, string Item, string Descripcion, int Qty);
 
 public class SakumaParseResult
@@ -24,7 +27,7 @@ public partial class SakumaImportService(AppDbContext db, TenantContext tenant, 
     private readonly TenantContext _tenant = tenant;
     private readonly InventarioService _inv = inv;
 
-    // ── Parse ─────────────────────────────────────────────────────
+    // ── Parse PDF ─────────────────────────────────────────────────
 
     public Task<SakumaParseResult> ParsearPdfAsync(Stream stream)
     {
@@ -45,11 +48,72 @@ public partial class SakumaImportService(AppDbContext db, TenantContext tenant, 
             int totalPages = doc.NumberOfPages;
             var dataPage = doc.GetPage(Math.Min(2, totalPages));
             var lines = ExtractLines(dataPage);
-            ParseDataRows(lines, result);
+            ParsePdfDataRows(lines, result);
         }
         catch (Exception ex)
         {
             result.Errores.Add($"Error al leer el PDF: {ex.Message}");
+        }
+        return Task.FromResult(result);
+    }
+
+    // ── Parse Excel ───────────────────────────────────────────────
+
+    // filename: nombre del archivo sin extensión → se usa como Referencia del Vale
+    public Task<SakumaParseResult> ParsearExcelAsync(Stream stream, string filename)
+    {
+        var result = new SakumaParseResult();
+        try
+        {
+            result.InvoiceNo = Path.GetFileNameWithoutExtension(filename)
+                .Trim().ToUpperInvariant();
+
+            using var wb = new XLWorkbook(stream);
+            var ws = wb.Worksheets.First();
+
+            int row = 2; // fila 1 = headers
+            while (true)
+            {
+                var cellA = ws.Cell(row, 1);
+                if (cellA.IsEmpty()) break;
+
+                string boxNo = cellA.GetValue<string>().Trim();
+                string material = ws.Cell(row, 2).GetValue<string>().Trim().ToUpperInvariant();
+                string size = ws.Cell(row, 4).GetValue<string>().Trim();
+                string lotNo = ws.Cell(row, 8).GetValue<string>().Trim().ToUpperInvariant();
+                int pcs = ws.Cell(row, 10).TryGetValue<int>(out var q) ? q : 0;
+
+                if (string.IsNullOrWhiteSpace(lotNo))
+                {
+                    result.Errores.Add($"Fila {row}: Lot No. (columna H) vacío.");
+                    row++;
+                    continue;
+                }
+                if (pcs <= 0)
+                {
+                    result.Errores.Add($"Fila {row}: PCS (columna J) inválido.");
+                    row++;
+                    continue;
+                }
+
+                string caseCode = $"{boxNo}-{lotNo}";
+                result.Lineas.Add(new SakumaLinea(
+                    SakumaCaseNo: int.TryParse(boxNo, out var bn) ? bn : 0,
+                    Item: material,
+                    OrderNo: lotNo,
+                    Descripcion: size,
+                    Qty: pcs,
+                    ProposedCaseCode: caseCode));
+
+                row++;
+            }
+
+            if (result.Lineas.Count == 0)
+                result.Errores.Add("No se encontraron filas de datos en el Excel.");
+        }
+        catch (Exception ex)
+        {
+            result.Errores.Add($"Error al leer el Excel: {ex.Message}");
         }
         return Task.FromResult(result);
     }
@@ -155,9 +219,8 @@ public partial class SakumaImportService(AppDbContext db, TenantContext tenant, 
         return lines;
     }
 
-    private static void ParseDataRows(List<string> lines, SakumaParseResult result)
+    private static void ParsePdfDataRows(List<string> lines, SakumaParseResult result)
     {
-        // Formato real: "PCS {caseNo} {nW/C} {qty} {item} {orderNo} ／"
         var headerRx = RowHeaderRx();
 
         for (int i = 0; i < lines.Count; i++)
@@ -190,12 +253,9 @@ public partial class SakumaImportService(AppDbContext db, TenantContext tenant, 
             result.Errores.Add("No se encontraron líneas de cajas en la página 2. Verifica el formato del PDF.");
     }
 
-    // Invoice No. SKIA2602-AM1  → captura la ref completa con letras y números
     [GeneratedRegex(@"Invoice\s+No\.?\s*[:\.]?\s*([A-Z0-9][\w\-]+)", RegexOptions.IgnoreCase)]
     private static partial Regex InvoiceNoRx();
 
-    // Formato real: "PCS 10 1W/C 404 4S0443 25X0393-00 ／"
-    // PCS {caseNo} {nW/C} {qty} {item} {orderNo} ／
     [GeneratedRegex(@"^PCS\s+(\d+)\s+\d+W/C\s+(\d+)\s+([A-Z0-9]+)\s+(\S+)\s+[／/]", RegexOptions.IgnoreCase)]
     private static partial Regex RowHeaderRx();
 }

@@ -3,7 +3,7 @@
 
 <h1><Icon Name="upload" Size="32" /> Importar SAKUMA</h1>
 <p style="color:var(--muted);margin-bottom:2rem;max-width:600px">
-    Sube el packing list PDF de SAKUMA. El sistema generará el Vale de Entrada y los CASEs automáticamente.
+    Sube el packing list de SAKUMA (PDF o Excel). El sistema generará el Vale de Entrada y los CASEs automáticamente.
 </p>
 
 @if (!string.IsNullOrEmpty(Error))
@@ -12,8 +12,8 @@
 }
 
 <form method="post" action="/api/sakuma/upload" enctype="multipart/form-data" class="form-section">
-    <label><Icon Name="upload" Size="12" /> Archivo PDF (packing list SAKUMA)</label>
-    <input type="file" name="archivo" accept=".pdf" required class="input" />
+    <label><Icon Name="upload" Size="12" /> Archivo PDF o Excel (packing list SAKUMA)</label>
+    <input type="file" name="archivo" accept=".pdf,.xlsx,.xls" required class="input" />
     <button type="submit" class="btn-primary"><Icon Name="check" Size="16" /> Analizar PDF</button>
 </form>
 

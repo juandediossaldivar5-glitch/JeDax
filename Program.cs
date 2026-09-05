@@ -269,18 +269,24 @@ app.MapPost("/api/vales/importar", async (HttpContext ctx, ValeImportService imp
     }
 });
 
-// ── SAKUMA PDF Import ─────────────────────────────────────────
+// ── SAKUMA Import (PDF o Excel) ───────────────────────────────
 app.MapPost("/api/sakuma/upload", async (HttpContext ctx, SakumaImportService svc, CurrentUser cu) =>
 {
     var f = await ctx.Request.ReadFormAsync();
     var file = f.Files.GetFile("archivo");
     if (file is null) return Results.Redirect("/sakuma-import?error=Sin+archivo");
 
+    string filename = file.FileName ?? "SAKUMA";
+    bool esExcel = filename.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase)
+                || filename.EndsWith(".xls", StringComparison.OrdinalIgnoreCase);
+
     SakumaParseResult parsed;
     try
     {
         using var s = file.OpenReadStream();
-        parsed = await svc.ParsearPdfAsync(s);
+        parsed = esExcel
+            ? await svc.ParsearExcelAsync(s, filename)
+            : await svc.ParsearPdfAsync(s);
     }
     catch (Exception ex)
     {
@@ -293,10 +299,11 @@ app.MapPost("/api/sakuma/upload", async (HttpContext ctx, SakumaImportService sv
         return Results.Redirect($"/sakuma-import?error={Uri.EscapeDataString(err)}");
     }
 
-    int siguiente = await svc.ObtenerSiguienteCaseNoAsync();
+    // Excel: CaseCode ya viene en ProposedCaseCode; PDF: asignar secuencial desde DB
+    int siguiente = esExcel ? 0 : await svc.ObtenerSiguienteCaseNoAsync();
     var lineas = parsed.Lineas.Select((l, i) => new
     {
-        caseCode = $"CASE{siguiente + i:D8}",
+        caseCode = l.ProposedCaseCode ?? $"CASE{siguiente + i:D8}",
         l.Item,
         l.Descripcion,
         l.Qty
