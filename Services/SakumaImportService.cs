@@ -157,8 +157,7 @@ public partial class SakumaImportService(AppDbContext db, TenantContext tenant, 
 
     private static void ParseDataRows(List<string> lines, SakumaParseResult result)
     {
-        // Patrón: "10 1W/C 404 PCS 4S0443 ／ 25X0393-00"
-        // ／ puede ser U+FF0F (fullwidth slash) o ASCII /
+        // Formato real: "PCS {caseNo} {nW/C} {qty} {item} {orderNo} ／"
         var headerRx = RowHeaderRx();
 
         for (int i = 0; i < lines.Count; i++)
@@ -191,10 +190,12 @@ public partial class SakumaImportService(AppDbContext db, TenantContext tenant, 
             result.Errores.Add("No se encontraron líneas de cajas en la página 2. Verifica el formato del PDF.");
     }
 
-    [GeneratedRegex(@"Invoice\s+No\.?\s*[:\.]?\s*([A-Z]{2,}[\d\-]+)", RegexOptions.IgnoreCase)]
+    // Invoice No. SKIA2602-AM1  → captura la ref completa con letras y números
+    [GeneratedRegex(@"Invoice\s+No\.?\s*[:\.]?\s*([A-Z0-9][\w\-]+)", RegexOptions.IgnoreCase)]
     private static partial Regex InvoiceNoRx();
 
-    // Acepta ／ (U+FF0F fullwidth) y / (ASCII)
-    [GeneratedRegex(@"^(\d+)\s+\d+W/C\s+(\d+)\s+PCS\s+([A-Z0-9]+)\s+[／/]\s+(\S+)", RegexOptions.IgnoreCase)]
+    // Formato real: "PCS 10 1W/C 404 4S0443 25X0393-00 ／"
+    // PCS {caseNo} {nW/C} {qty} {item} {orderNo} ／
+    [GeneratedRegex(@"^PCS\s+(\d+)\s+\d+W/C\s+(\d+)\s+([A-Z0-9]+)\s+(\S+)\s+[／/]", RegexOptions.IgnoreCase)]
     private static partial Regex RowHeaderRx();
 }
