@@ -57,5 +57,28 @@ public static class DbSeeder
 
             await db.SaveChangesAsync();
         }
+
+        // Tenant SAKUMA (pruebas de importación PDF)
+        if (!await db.Tenants.IgnoreQueryFilters().AnyAsync(t => t.Slug == "sakuma"))
+        {
+            var sakuma = new Tenant
+            {
+                Nombre = "SAKUMA Import",
+                Slug = "sakuma",
+                Activo = true
+            };
+            db.Tenants.Add(sakuma);
+            await db.SaveChangesAsync();
+
+            db.Usuarios.Add(new Usuario
+            {
+                TenantId = sakuma.Id,
+                Username = "admin",
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin1234!"),
+                Rol = RolUsuario.Admin,
+                Activo = true
+            });
+            await db.SaveChangesAsync();
+        }
     }
 }
