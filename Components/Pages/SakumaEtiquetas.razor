@@ -1,5 +1,6 @@
 @page "/sakuma-etiquetas"
 @using JeDax.Components.Shared
+@using JeDax.Helpers
 @inject ValeService ValesSvc
 
 @if (_detalles.Count == 0)
@@ -13,81 +14,95 @@
 }
 else
 {
-    <div class="no-print" style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap">
-        <h1 style="margin:0"><Icon Name="box" Size="28" /> Etiquetas — @Ref</h1>
-        <span style="color:var(--muted)">@_detalles.Count etiquetas</span>
-        <button onclick="window.print()" class="btn-primary" style="margin-left:auto">
-            <Icon Name="download" Size="16" /> Imprimir
-        </button>
-        <a href="/vales" class="btn-outline no-print">Ir a Vales</a>
+    <div class="no-print toolbar-print">
+        <span><strong>@Ref</strong> — @_detalles.Count etiquetas</span>
+        <button onclick="window.print()" class="btn-primary"><Icon Name="download" Size="16" /> Imprimir</button>
+        <a href="/vales" class="btn-outline">Ir a Vales</a>
     </div>
 
-    <div class="label-grid">
-        @foreach (var d in _detalles)
-        {
-            <div class="label-card">
-                <div class="label-barcode">*@d.CaseCode*</div>
-                <div class="label-code">@d.CaseCode</div>
-                @if (!string.IsNullOrEmpty(d.Item))
-                {
-                    <div class="label-meta">@d.Item</div>
-                }
-                @if (!string.IsNullOrEmpty(d.Descripcion))
-                {
-                    <div class="label-meta">@d.Descripcion</div>
-                }
-                <div class="label-meta">@d.Qty PCS</div>
-            </div>
-        }
-    </div>
+    @foreach (var d in _detalles)
+    {
+        <div class="etiqueta-page">
+            <div class="etiqueta-ref">@Ref</div>
+            <img class="etiqueta-qr"
+                 src="data:image/png;base64,@QrHelper.ToBase64Png(d.CaseCode)"
+                 alt="QR @d.CaseCode" />
+            <div class="etiqueta-code">@d.CaseCode</div>
+            @if (!string.IsNullOrEmpty(d.Item))
+            {
+                <div class="etiqueta-meta">@d.Item</div>
+            }
+            @if (!string.IsNullOrEmpty(d.Descripcion))
+            {
+                <div class="etiqueta-meta">@d.Descripcion</div>
+            }
+            <div class="etiqueta-meta">@d.Qty PCS</div>
+        </div>
+    }
 }
 
 <style>
-    .label-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    .toolbar-print {
+        display: flex;
+        align-items: center;
         gap: 1rem;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
     }
 
-    .label-card {
-        border: 2px solid var(--border);
-        border-radius: 10px;
-        padding: 1rem;
+    .etiqueta-page {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 80vh;
+        padding: 2rem;
         text-align: center;
-        background: var(--card);
-        break-inside: avoid;
+        break-after: page;
+        page-break-after: always;
     }
 
-    .label-barcode {
+    .etiqueta-ref {
+        font-size: .85rem;
+        color: var(--muted);
+        margin-bottom: 1.5rem;
+        letter-spacing: .05em;
+    }
+
+    .etiqueta-qr {
+        width: 260px;
+        height: 260px;
+        image-rendering: pixelated;
+        margin-bottom: 1.5rem;
+    }
+
+    .etiqueta-code {
         font-family: 'Courier New', monospace;
-        font-size: 1.1rem;
+        font-size: 1.4rem;
         font-weight: bold;
-        letter-spacing: 2px;
-        margin-bottom: .25rem;
+        letter-spacing: .1em;
+        margin-bottom: .75rem;
         color: var(--text);
     }
 
-    .label-code {
-        font-family: 'Courier New', monospace;
-        font-size: .85rem;
+    .etiqueta-meta {
+        font-size: .95rem;
         color: var(--muted);
-        margin-bottom: .5rem;
-    }
-
-    .label-meta {
-        font-size: .78rem;
-        color: var(--muted);
-        line-height: 1.4;
+        line-height: 1.6;
     }
 
     @@media print {
         .no-print { display: none !important; }
-        body { background: white !important; }
-        .label-card { border: 1px solid #ccc; background: white; color: black; }
-        .label-barcode { color: black; }
-        .label-code { color: #555; }
-        .label-meta { color: #555; }
-        .label-grid { gap: .5rem; }
+
+        .etiqueta-page {
+            min-height: 100vh;
+            padding: 1rem;
+            background: white;
+        }
+
+        .etiqueta-ref { color: #555; }
+        .etiqueta-code { color: black; }
+        .etiqueta-meta { color: #444; }
     }
 </style>
 
