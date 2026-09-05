@@ -13,7 +13,10 @@
 
 <form method="post" action="/api/inventario/entrada" class="form-section">
     <label><Icon Name="box" Size="12" /> CASE code</label>
-    <input name="caseCode" required autofocus class="input" placeholder="CASE00000000" />
+    <div class="scan-wrap">
+        <input id="inp-case" name="caseCode" required autofocus class="input" placeholder="CASE00000000" />
+        <button type="button" class="btn-scan" onclick="openScanner('inp-case','CASE code')"><Icon Name="camera" Size="18" /></button>
+    </div>
 
     <label><Icon Name="hash" Size="12" /> Item (part number)</label>
     <input name="item" required class="input" placeholder="ej: 12345-A" />

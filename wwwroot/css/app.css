@@ -575,3 +575,25 @@ h3 .icon { color: var(--lime); margin-right: 8px; vertical-align: -3px; }
     .tabla { font-size: 12px; }
     .tabla th, .tabla td { padding: 10px 12px; }
 }
+
+/* ── Camera scanner ───────────────────────────────────────── */
+.scan-wrap {
+    display: flex;
+    gap: .4rem;
+    align-items: stretch;
+}
+.scan-wrap .input { flex: 1; min-width: 0; }
+.btn-scan {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--lime);
+    border-radius: 8px;
+    padding: 0 .85rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background .15s, color .15s;
+    flex-shrink: 0;
+}
+.btn-scan:hover { background: var(--lime); color: #000; }

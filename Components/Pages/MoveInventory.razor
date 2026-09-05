@@ -18,10 +18,16 @@
 
 <form method="post" action="/api/inventario/mover" class="form-section">
     <label><Icon Name="box" Size="12" /> CASE code</label>
-    <input name="caseCode" required autofocus class="input" placeholder="CASE00000000" value="@Code" />
+    <div class="scan-wrap">
+        <input id="inp-case" name="caseCode" required autofocus class="input" placeholder="CASE00000000" value="@Code" />
+        <button type="button" class="btn-scan" onclick="openScanner('inp-case','CASE code')"><Icon Name="camera" Size="18" /></button>
+    </div>
 
     <label><Icon Name="map-pin" Size="12" /> Nueva ubicación</label>
-    <input name="ubicacion" required class="input" placeholder="A001/B02/000001" />
+    <div class="scan-wrap">
+        <input id="inp-ubic" name="ubicacion" required class="input" placeholder="A001/B02/000001" />
+        <button type="button" class="btn-scan" onclick="openScanner('inp-ubic','Ubicación')"><Icon Name="camera" Size="18" /></button>
+    </div>
 
     <button type="submit" class="btn-primary"><Icon Name="check" Size="16" /> Mover</button>
 </form>

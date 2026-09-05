@@ -12,5 +12,26 @@
 </head>
 <body>
     <Routes />
+
+    <div id="scan-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.9);flex-direction:column;align-items:center;justify-content:center;padding:1rem;">
+        <div style="background:#1c1c1e;border-radius:16px;padding:1.25rem;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,.5);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+                <span id="scan-label" style="font-weight:600;color:#fff;font-size:14px;"></span>
+                <button type="button" onclick="closeScanner()" style="background:none;border:none;color:#aaa;font-size:1.4rem;cursor:pointer;line-height:1;padding:0 4px;">&times;</button>
+            </div>
+            <div id="scan-camera" style="width:100%;border-radius:8px;overflow:hidden;"></div>
+            <div id="scan-result" style="display:none;margin-top:1rem;">
+                <div style="background:#111;border-radius:10px;padding:.9rem;margin-bottom:.75rem;text-align:center;">
+                    <div style="color:#888;font-size:11px;margin-bottom:.3rem;text-transform:uppercase;letter-spacing:.06em;">Código detectado</div>
+                    <div id="scan-value" style="font-size:1.1rem;font-weight:700;color:#adff2f;word-break:break-all;font-family:monospace;"></div>
+                </div>
+                <button type="button" onclick="confirmScan()" style="width:100%;padding:.8rem;background:#adff2f;color:#000;font-weight:700;border:none;border-radius:8px;cursor:pointer;font-size:1rem;margin-bottom:.5rem;">Usar este código</button>
+                <button type="button" onclick="retryScanner()" style="width:100%;padding:.7rem;background:transparent;color:#888;border:1px solid #333;border-radius:8px;cursor:pointer;font-size:.875rem;">Volver a escanear</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script src="js/scanner.js"></script>
 </body>
 </html>
