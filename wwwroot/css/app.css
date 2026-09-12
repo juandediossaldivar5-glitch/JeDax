@@ -37,64 +37,156 @@ body {
     min-height: 100vh;
 }
 
-/* ── Layout ───────────────────────────────────────────────── */
-.layout { display: flex; flex-direction: column; min-height: 100vh; }
-.content { flex: 1; padding: 2rem 6%; max-width: 1400px; margin: 0 auto; width: 100%; }
+/* ── App Shell ────────────────────────────────────────────── */
+.layout {
+    display: flex;
+    flex-direction: row;
+    min-height: 100vh;
+}
 
-/* ── Navbar ───────────────────────────────────────────────── */
-.navbar {
-    background: rgba(10, 15, 30, .92);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-bottom: 1px solid rgba(212, 0, 26, .18);
-    padding: 0 6%;
-    height: 68px;
+/* ── Sidebar ──────────────────────────────────────────────── */
+.sidebar {
+    width: 220px;
+    min-height: 100vh;
+    background: #080d1a;
+    border-right: 1px solid rgba(255, 255, 255, .07);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 100;
+    overflow: hidden;
+}
+
+.sidebar-brand {
     display: flex;
     align-items: center;
-    gap: 1.5rem;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-}
-.brand {
-    display: inline-flex;
-    align-items: center;
     gap: 10px;
-    font-family: var(--display);
-    font-weight: 900;
-    font-size: 20px;
-    letter-spacing: -.04em;
-    color: var(--white);
-    margin-right: 1rem;
-    text-decoration: none;
+    padding: 18px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, .06);
+    flex-shrink: 0;
 }
-.brand img {
-    height: 30px;
+
+.sidebar-brand img {
+    height: 28px;
     border-radius: 4px;
+    object-fit: contain;
     background: #fff;
     padding: 1px;
-    object-fit: contain;
 }
-.brand-name {
+
+.sidebar-brand-name {
+    font-family: var(--display);
+    font-weight: 900;
+    font-size: 17px;
+    letter-spacing: -.04em;
     color: var(--accent);
 }
-.navbar a {
-    font-size: 13px;
+
+.sidebar-nav {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 10px 8px;
+    gap: 2px;
+    overflow-y: auto;
+}
+
+.nav-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    border-radius: 8px;
+    font-size: 13.5px;
+    font-weight: 500;
     color: var(--muted);
     text-decoration: none;
-    font-weight: 500;
-    transition: color .2s;
-    padding: 6px 2px;
+    transition: background .15s, color .15s;
 }
-.navbar a:hover { color: var(--white); }
+
+.nav-link:hover {
+    background: rgba(212, 0, 26, .1);
+    color: var(--white);
+}
+
+.nav-link .icon { color: var(--muted); transition: color .15s; flex-shrink: 0; }
+.nav-link:hover .icon { color: var(--accent); }
+
+.sidebar-footer {
+    padding: 10px 8px;
+    border-top: 1px solid rgba(255, 255, 255, .06);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
 .nav-user {
-    margin-left: auto;
-    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    font-size: 11.5px;
     color: var(--muted);
     font-weight: 600;
-    padding: 5px 12px;
-    background: rgba(255, 255, 255, .04);
-    border-radius: var(--radius-pill);
+    background: rgba(255, 255, 255, .03);
+    border-radius: 8px;
+}
+
+.nav-user .icon { color: var(--accent); }
+
+.nav-logout {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 12px;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, .07);
+    border-radius: 8px;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background .15s, color .15s, border-color .15s;
+    font-family: var(--sans);
+}
+
+.nav-logout:hover {
+    background: rgba(212, 0, 26, .1);
+    color: #ff6070;
+    border-color: var(--accent);
+}
+
+.nav-logout .icon { vertical-align: -2px; }
+
+/* ── Main content ─────────────────────────────────────────── */
+.content {
+    flex: 1;
+    margin-left: 220px;
+    padding: 2rem 2.5rem;
+    max-width: none;
+    min-height: 100vh;
+}
+
+/* ── Hamburger mobile ─────────────────────────────────────── */
+.sidebar-toggle {
+    display: none;
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    z-index: 200;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    cursor: pointer;
+    color: var(--white);
+    align-items: center;
+    justify-content: center;
 }
 
 /* ── Tipografía ───────────────────────────────────────────── */
@@ -485,35 +577,6 @@ h1 .icon { color: var(--accent); margin-right: 12px; vertical-align: -4px; }
 h3 .icon { color: var(--accent); margin-right: 8px; vertical-align: -3px; }
 .card-lbl .icon { vertical-align: -2px; margin-right: 4px; opacity: .7; }
 
-/* Nav links con icono */
-.nav-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 12px !important;
-    border-radius: 10px;
-    transition: background .15s, color .15s;
-}
-.nav-link:hover { background: rgba(212, 0, 26, .1); color: var(--accent) !important; }
-.nav-link .icon { color: var(--muted); transition: color .15s; }
-.nav-link:hover .icon { color: var(--accent); }
-
-.nav-user { display: inline-flex; align-items: center; gap: 6px; }
-.nav-user .icon { color: var(--accent); }
-
-.nav-logout {
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--muted);
-    padding: 8px 10px;
-    border-radius: 10px;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    transition: background .15s, color .15s, border-color .15s;
-}
-.nav-logout:hover { background: rgba(212, 0, 26, .1); color: #ff6070; border-color: var(--accent); }
-
 /* Labels con icono */
 .form-section label .icon, .form-login label .icon {
     color: var(--accent);
@@ -580,9 +643,10 @@ h3 .icon { color: var(--accent); margin-right: 8px; vertical-align: -3px; }
 
 /* ── Responsive ───────────────────────────────────────────── */
 @media (max-width: 768px) {
-    .content { padding: 1.5rem 4%; }
-    .navbar { padding: 0 4%; height: 60px; gap: 1rem; overflow-x: auto; }
-    .navbar a { font-size: 12px; }
+    .sidebar-toggle { display: flex; }
+    .sidebar { transform: translateX(-100%); transition: transform .25s; }
+    .sidebar.open { transform: translateX(0); box-shadow: 4px 0 24px rgba(0,0,0,.5); }
+    .content { margin-left: 0; padding: 4.5rem 1rem 1.5rem; }
     h1 { font-size: 28px; margin-bottom: 1.5rem; }
     .cards-row { gap: 8px; }
     .card { min-width: 140px; padding: 16px 18px; }

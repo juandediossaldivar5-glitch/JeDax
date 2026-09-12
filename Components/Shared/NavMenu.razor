@@ -1,55 +1,67 @@
 @namespace JeDax.Components.Shared
 @inject CurrentUser Current
 
-<nav class="navbar">
-    <span class="brand">
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
         <img src="/logo-melco.jpg" alt="MELCO" />
-        <span class="brand-name">CITS</span>
-    </span>
+        <span class="sidebar-brand-name">CITS</span>
+    </div>
+
     @if (Current.IsAuthenticated && Current.User is not null)
     {
-        @if (Permisos.PuedeUsarIngreso(Current.User.Rol))
-        {
-            <a href="/ingreso" class="nav-link"><Icon Name="ingreso" Size="16" /><span>Ingreso</span></a>
-        }
-        @if (Permisos.PuedeVerStock(Current.User.Rol))
-        {
-            <a href="/stock" class="nav-link"><Icon Name="stock" Size="16" /><span>Stock</span></a>
-        }
-        @if (Permisos.PuedeMoverInventario(Current.User.Rol))
-        {
-            <a href="/move" class="nav-link"><Icon Name="mover" Size="16" /><span>Mover</span></a>
-        }
-        @if (Permisos.PuedeRegistrarSalidas(Current.User.Rol))
-        {
-            <a href="/salidas" class="nav-link"><Icon Name="salidas" Size="16" /><span>Salidas</span></a>
-        }
-        @if (Permisos.PuedeVerImportarVales(Current.User.Rol))
-        {
-            <a href="/vales" class="nav-link"><Icon Name="vales" Size="16" /><span>Vales</span></a>
-        }
-        @if (Permisos.PuedeImportarSakuma(Current.User.Rol))
-        {
-            <a href="/sakuma-import" class="nav-link"><Icon Name="upload" Size="16" /><span>SAKUMA</span></a>
-        }
-        <a href="/historial" class="nav-link"><Icon Name="historial" Size="16" /><span>Historial</span></a>
-        @if (Permisos.PuedeAccederCaseGenerador(Current.User.Rol))
-        {
-            <a href="/case-generador" class="nav-link"><Icon Name="case-gen" Size="16" /><span>CASE Gen</span></a>
-        }
-        @if (Permisos.PuedeAdministrarUsuarios(Current.User.Rol))
-        {
-            <a href="/admin" class="nav-link"><Icon Name="admin" Size="16" /><span>Admin</span></a>
-        }
-        <span class="nav-user"><Icon Name="user" Size="14" /> @Current.User.Username</span>
-        <form method="post" action="/api/logout" style="display:inline;margin:0">
-            <button type="submit" class="nav-logout" title="Salir">
-                <Icon Name="logout" Size="16" />
-            </button>
-        </form>
+        <nav class="sidebar-nav">
+            @if (Permisos.PuedeUsarIngreso(Current.User.Rol))
+            {
+                <a href="/ingreso" class="nav-link"><Icon Name="ingreso" Size="16" /><span>Ingreso</span></a>
+            }
+            @if (Permisos.PuedeVerStock(Current.User.Rol))
+            {
+                <a href="/stock" class="nav-link"><Icon Name="stock" Size="16" /><span>Stock</span></a>
+            }
+            @if (Permisos.PuedeMoverInventario(Current.User.Rol))
+            {
+                <a href="/move" class="nav-link"><Icon Name="mover" Size="16" /><span>Mover</span></a>
+            }
+            @if (Permisos.PuedeRegistrarSalidas(Current.User.Rol))
+            {
+                <a href="/salidas" class="nav-link"><Icon Name="salidas" Size="16" /><span>Salidas</span></a>
+            }
+            @if (Permisos.PuedeVerImportarVales(Current.User.Rol))
+            {
+                <a href="/vales" class="nav-link"><Icon Name="vales" Size="16" /><span>Vales</span></a>
+            }
+            @if (Permisos.PuedeImportarSakuma(Current.User.Rol))
+            {
+                <a href="/sakuma-import" class="nav-link"><Icon Name="upload" Size="16" /><span>SAKUMA</span></a>
+            }
+            <a href="/historial" class="nav-link"><Icon Name="historial" Size="16" /><span>Historial</span></a>
+            @if (Permisos.PuedeAccederCaseGenerador(Current.User.Rol))
+            {
+                <a href="/case-generador" class="nav-link"><Icon Name="case-gen" Size="16" /><span>CASE Gen</span></a>
+            }
+            @if (Permisos.PuedeAdministrarUsuarios(Current.User.Rol))
+            {
+                <a href="/admin" class="nav-link"><Icon Name="admin" Size="16" /><span>Admin</span></a>
+            }
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="nav-user"><Icon Name="user" Size="14" /> @Current.User.Username</div>
+            <form method="post" action="/api/logout" style="margin:0">
+                <button type="submit" class="nav-logout">
+                    <Icon Name="logout" Size="15" /> Salir
+                </button>
+            </form>
+        </div>
     }
     else
     {
-        <a href="/login">Iniciar sesión</a>
+        <nav class="sidebar-nav">
+            <a href="/login" class="nav-link">Iniciar sesión</a>
+        </nav>
     }
-</nav>
+</aside>
+
+<button class="sidebar-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')" aria-label="Menú">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+</button>
