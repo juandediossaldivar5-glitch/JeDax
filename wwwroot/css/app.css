@@ -3,14 +3,14 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Cabinet+Grotesk:wght@400;500;700;900&display=swap');
 
 :root {
-    --accent:    #3b82f6;
-    --accent-dim: rgba(59, 130, 246, .12);
+    --accent:    #1a6fce;
+    --accent-dim: rgba(26, 111, 206, .12);
     --dark:  #0a0f1e;
     --dark2: #0d1428;
     --card:  #111827;
     --card2: #1a2238;
     --border: rgba(255, 255, 255, .07);
-    --border-hi: rgba(59, 130, 246, .28);
+    --border-hi: rgba(26, 111, 206, .28);
     --muted: rgba(255, 255, 255, .45);
     --white: #e8eaf0;
     --green: #2ECC71;
@@ -108,7 +108,7 @@ body {
 }
 
 .nav-link:hover {
-    background: rgba(59, 130, 246, .1);
+    background: rgba(26, 111, 206, .1);
     color: var(--white);
 }
 
@@ -156,8 +156,8 @@ body {
 }
 
 .nav-logout:hover {
-    background: rgba(59, 130, 246, .1);
-    color: #93c5fd;
+    background: rgba(26, 111, 206, .1);
+    color: #90b8f2;
     border-color: var(--accent);
 }
 
@@ -232,7 +232,7 @@ h3 {
     opacity: 0;
     transition: opacity .3s;
 }
-.card:hover { border-color: rgba(59, 130, 246, .35); transform: translateY(-3px); }
+.card:hover { border-color: rgba(26, 111, 206, .35); transform: translateY(-3px); }
 .card:hover::before { opacity: 1; }
 .card-num {
     font-family: var(--display);
@@ -317,7 +317,7 @@ h3 {
 }
 .btn-primary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 10px 32px rgba(59, 130, 246, .4);
+    box-shadow: 0 10px 32px rgba(26, 111, 206, .4);
 }
 
 .btn-danger {
@@ -456,7 +456,7 @@ h3 {
     font-size: 13px;
 }
 .tabla tr:last-child td { border-bottom: none; }
-.tabla tr:hover td { background: rgba(59, 130, 246, .04); }
+.tabla tr:hover td { background: rgba(26, 111, 206, .04); }
 .row-warn td { color: var(--amber); }
 
 /* ── Badges ───────────────────────────────────────────────── */
@@ -472,9 +472,9 @@ h3 {
     border: 1px solid transparent;
 }
 .badge-recibido, .badge-mov-entrada, .badge-entrada {
-    background: rgba(59, 130, 246, .12);
-    color: #93c5fd;
-    border-color: rgba(59, 130, 246, .28);
+    background: rgba(26, 111, 206, .12);
+    color: #90b8f2;
+    border-color: rgba(26, 111, 206, .28);
 }
 .badge-ubicado, .badge-estado-cerrado {
     background: rgba(46, 204, 113, .1);
@@ -564,7 +564,7 @@ h3 {
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: var(--dark); }
 ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, .1); border-radius: 5px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(59, 130, 246, .4); }
+::-webkit-scrollbar-thumb:hover { background: rgba(26, 111, 206, .4); }
 
 /* ── Iconos SVG ───────────────────────────────────────────── */
 .icon {
