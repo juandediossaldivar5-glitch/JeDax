@@ -2,7 +2,10 @@
 @inject CurrentUser Current
 
 <nav class="navbar">
-    <span class="brand">JeDax</span>
+    <span class="brand">
+        <img src="/logo-melco.jpg" alt="MELCO" />
+        <span class="brand-name">CITS</span>
+    </span>
     @if (Current.IsAuthenticated && Current.User is not null)
     {
         @if (Permisos.PuedeUsarIngreso(Current.User.Rol))
