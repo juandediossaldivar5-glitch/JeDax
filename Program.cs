@@ -434,15 +434,18 @@ app.Run();
 static string BuildConnectionString()
 {
     var url = Environment.GetEnvironmentVariable("DATABASE_URL");
-    if (url != null)
+    if (url != null && url.Contains('@') && (url.StartsWith("postgresql://") || url.StartsWith("postgres://")))
     {
         var s = url.Replace("postgresql://", "").Replace("postgres://", "");
         var at = s.IndexOf('@');
         var userInfo = s[..at].Split(':', 2);
         var hostPart = s[(at + 1)..];
         var slash = hostPart.IndexOf('/');
-        var hostPort = hostPart[..slash].Split(':', 2);
-        return $"Host={hostPort[0]};Port={hostPort[1]};Database={hostPart[(slash+1)..]};Username={userInfo[0]};Password={userInfo[1]}";
+        if (slash >= 0 && userInfo.Length == 2)
+        {
+            var hostPort = hostPart[..slash].Split(':', 2);
+            return $"Host={hostPort[0]};Port={(hostPort.Length > 1 ? hostPort[1] : "5432")};Database={hostPart[(slash+1)..]};Username={userInfo[0]};Password={userInfo[1]}";
+        }
     }
     return string.Format("Host={0};Port={1};Database={2};Username={3};Password={4}",
         Environment.GetEnvironmentVariable("PGHOST"),
