@@ -18,12 +18,23 @@ bool usePostgres = builder.Configuration.GetValue<bool>("UsePostgres");
 
 if (usePostgres)
 {
-    var cs = string.Format("Host={0};Port={1};Database={2};Username={3};Password={4}",
-        Environment.GetEnvironmentVariable("PGHOST"),
-        Environment.GetEnvironmentVariable("PGPORT"),
-        Environment.GetEnvironmentVariable("PGDATABASE"),
-        Environment.GetEnvironmentVariable("PGUSER"),
-        Environment.GetEnvironmentVariable("PGPASSWORD"));
+    var dbUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+    string cs;
+    if (dbUrl != null)
+    {
+        var uri = new Uri(dbUrl);
+        var userInfo = uri.UserInfo.Split(':');
+        cs = $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.TrimStart('/')};Username={userInfo[0]};Password={userInfo[1]}";
+    }
+    else
+    {
+        cs = string.Format("Host={0};Port={1};Database={2};Username={3};Password={4}",
+            Environment.GetEnvironmentVariable("PGHOST"),
+            Environment.GetEnvironmentVariable("PGPORT"),
+            Environment.GetEnvironmentVariable("PGDATABASE"),
+            Environment.GetEnvironmentVariable("PGUSER"),
+            Environment.GetEnvironmentVariable("PGPASSWORD"));
+    }
     builder.Services.AddDbContext<AppDbContext>(opt => opt
         .UseNpgsql(cs)
         .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning)));
