@@ -18,13 +18,7 @@ bool usePostgres = builder.Configuration.GetValue<bool>("UsePostgres");
 
 if (usePostgres)
 {
-    var cs = Environment.GetEnvironmentVariable("DATABASE_URL")
-        ?? string.Format("Host={0};Port={1};Database={2};Username={3};Password={4}",
-            Environment.GetEnvironmentVariable("PGHOST"),
-            Environment.GetEnvironmentVariable("PGPORT"),
-            Environment.GetEnvironmentVariable("PGDATABASE"),
-            Environment.GetEnvironmentVariable("PGUSER"),
-            Environment.GetEnvironmentVariable("PGPASSWORD"));
+    var cs = BuildConnectionString();
     builder.Services.AddDbContext<AppDbContext>(opt => opt
         .UseNpgsql(cs)
         .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning)));
@@ -436,3 +430,24 @@ app.MapGet("/api/export/vales", async (ExportService ex) =>
 app.MapRazorComponents<JeDax.Components.App>().DisableAntiforgery();
 
 app.Run();
+
+static string BuildConnectionString()
+{
+    var url = Environment.GetEnvironmentVariable("DATABASE_URL");
+    if (url != null)
+    {
+        var s = url.Replace("postgresql://", "").Replace("postgres://", "");
+        var at = s.IndexOf('@');
+        var userInfo = s[..at].Split(':', 2);
+        var hostPart = s[(at + 1)..];
+        var slash = hostPart.IndexOf('/');
+        var hostPort = hostPart[..slash].Split(':', 2);
+        return $"Host={hostPort[0]};Port={hostPort[1]};Database={hostPart[(slash+1)..]};Username={userInfo[0]};Password={userInfo[1]}";
+    }
+    return string.Format("Host={0};Port={1};Database={2};Username={3};Password={4}",
+        Environment.GetEnvironmentVariable("PGHOST"),
+        Environment.GetEnvironmentVariable("PGPORT"),
+        Environment.GetEnvironmentVariable("PGDATABASE"),
+        Environment.GetEnvironmentVariable("PGUSER"),
+        Environment.GetEnvironmentVariable("PGPASSWORD"));
+}
