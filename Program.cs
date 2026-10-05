@@ -64,7 +64,7 @@ var app = builder.Build();
         await conn.CloseAsync();
 
         if (needsReset) await db.Database.EnsureDeletedAsync();
-        await db.Database.EnsureCreatedAsync();
+        await db.Database.MigrateAsync();
     }
     else
     {
