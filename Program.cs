@@ -65,6 +65,20 @@ var app = builder.Build();
 
         if (needsReset) await db.Database.EnsureDeletedAsync();
         await db.Database.MigrateAsync();
+
+        // Fix por si la migración FixBoolColumnsPostgres falló con el cast directo
+        await db.Database.ExecuteSqlRawAsync(@"
+            DO $$
+            BEGIN
+                IF (SELECT data_type FROM information_schema.columns
+                    WHERE table_name = 'Tenants' AND column_name = 'Activo') = 'integer' THEN
+                    ALTER TABLE ""Tenants""   ALTER COLUMN ""Activo""    TYPE boolean USING (""Activo"" != 0);
+                    ALTER TABLE ""Usuarios""  ALTER COLUMN ""Activo""    TYPE boolean USING (""Activo"" != 0);
+                    ALTER TABLE ""Productos"" ALTER COLUMN ""Activo""    TYPE boolean USING (""Activo"" != 0);
+                    ALTER TABLE ""Vales""     ALTER COLUMN ""Procesado"" TYPE boolean USING (""Procesado"" != 0);
+                END IF;
+            END $$;
+        ");
     }
     else
     {
